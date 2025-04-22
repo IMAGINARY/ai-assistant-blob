@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>AI Assistant Blob</title>
+    <link
+      rel="stylesheet"
+      href="https://public.codepenassets.com/css/reset-2.0.min.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- partial:index.partial.html -->
+    <div id="blob">
+      <canvas></canvas>
+    </div>
+
+    <div class="controls">
+      <div>
+        <label>Speed</label>
+        <input
+          type="range"
+          min="10"
+          max="120"
+          value="13"
+          step="1"
+          name="speed"
+        />
+      </div>
+      <div>
+        <label>Spikes</label>
+        <input
+          type="range"
+          min=".05"
+          max="2"
+          value=".6"
+          step=".05"
+          name="spikes"
+        />
+      </div>
+      <div>
+        <label>Processing</label>
+        <input
+          type="range"
+          min=".6"
+          max="2.4"
+          value="1"
+          step=".01"
+          name="processing"
+        />
+      </div>
+    </div>
+    <!-- partial -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/105/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
