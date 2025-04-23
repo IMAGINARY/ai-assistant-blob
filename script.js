@@ -1,3 +1,33 @@
+let mic;
+let level = 0;
+let samples = new Array(32).fill(0);
+let envelope = 0;
+
+const loudnessFactor = 50;
+
+function setup() {
+  createCanvas(windowWidth, 200);
+  userStartAudio();
+
+  //create & start an audio input
+  mic = new p5.AudioIn();
+  mic.start();
+}
+
+function draw() {
+  //get the level of amplitude of the mic
+  level = mic.getLevel(1);
+  const firstSample = samples.shift();
+  samples.push(level);
+  envelope -= firstSample / samples.length;
+  envelope += level / samples.length;
+
+  background(200);
+
+  circle(100, 100, level * loudnessFactor * 100);
+  circle(300, 100, envelope * loudnessFactor * 100);
+}
+
 $(document).ready(function () {
   let speedSlider = $('input[name="speed"]'),
     spikesSlider = $('input[name="spikes"]'),
@@ -58,7 +88,10 @@ $(document).ready(function () {
     lastTimestamp = timestamp;
     time += timeDiff * 0.00005 * speedSlider.val();
 
-    let spikes = spikesSlider.val() * processingSlider.val();
+    //    let spikes = spikesSlider.val() * processingSlider.val();
+
+    let spikes =
+      (0.5 + 1.5 * envelope * loudnessFactor) * processingSlider.val();
 
     for (let i = 0; i < sphere.geometry.vertices.length; i++) {
       let p = sphere.geometry.vertices[i];
@@ -66,7 +99,11 @@ $(document).ready(function () {
       p.multiplyScalar(
         1 +
           0.3 *
-            simplex.noise3D(p.x * spikes, p.y * spikes, p.z * spikes + time),
+            simplex.noise3D(
+              p.x * spikes + time,
+              p.y * spikes + time,
+              p.z * spikes + time,
+            ),
       );
     }
 
