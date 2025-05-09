@@ -20,7 +20,7 @@ let relativeProximity = 0;
 
 function preload() {
   // Load the bodyPose model
-  bodyPose = ml5.bodyPose("BlazePose");
+  bodyPose = ml5.bodyPose();
 }
 
 function setup() {
@@ -70,7 +70,7 @@ function draw() {
       circle(
         400 + ((keypoint.x / 640) * 200 * 640) / 480,
         (keypoint.y / 480) * 200,
-        10,
+        10
       );
     }
   }
@@ -91,23 +91,30 @@ function gotPoses(results) {
   // Save the output to the poses variable
   poses = results;
 
-  console.log(poses);
+  // console.log(poses);
 
-  nearestZ = poses.reduce(
-    (minZOuter, { keypoints3D }) =>
-      Math.min(
-        keypoints3D
-          .filter(({ confidence }) => confidence >= minKeypointConfidence)
-          .reduce((minZInner, { z }) => Math.min(minZInner, z), minZOuter),
-        minZOuter,
-      ),
-    Number.POSITIVE_INFINITY,
-  );
+  let screenspace = 0;
+  for (let pose of poses) {
+    const { width, height } = pose.box;
+    screenspace += width * height;
+  }
 
-  const clampedNearestZ = Math.max(Math.min(nearestZ, maxZ), minZ);
-  relativeProximity = 1.0 - (clampedNearestZ - minZ) / (maxZ - minZ);
+  // nearestZ = poses.reduce(
+  //   (minZOuter, { keypoints3D }) =>
+  //     Math.min(
+  //       keypoints3D
+  //         .filter(({ confidence }) => confidence >= minKeypointConfidence)
+  //         .reduce((minZInner, { z }) => Math.min(minZInner, z), minZOuter),
+  //       minZOuter
+  //     ),
+  //   Number.POSITIVE_INFINITY
+  // );
 
-  console.log(nearestZ, relativeProximity);
+  // const clampedNearestZ = Math.max(Math.min(nearestZ, maxZ), minZ);
+  // relativeProximity = 1.0 - (clampedNearestZ - minZ) / (maxZ - minZ);
+  relativeProximity = Math.min(1, screenspace / (640 * 480));
+
+  // console.log(nearestZ, relativeProximity);
 }
 
 $(document).ready(function () {
@@ -133,7 +140,7 @@ $(document).ready(function () {
     45,
     $canvas.width() / $canvas.height(),
     0.1,
-    1000,
+    1000
   );
 
   camera.position.z = 5;
@@ -187,8 +194,8 @@ $(document).ready(function () {
             simplex.noise3D(
               p.x * spikes + time,
               p.y * spikes + time,
-              p.z * spikes + time,
-            ),
+              p.z * spikes + time
+            )
       );
     }
 
