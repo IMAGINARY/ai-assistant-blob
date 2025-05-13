@@ -91,30 +91,13 @@ function gotPoses(results) {
   // Save the output to the poses variable
   poses = results;
 
-  // console.log(poses);
-
   let screenspace = 0;
   for (let pose of poses) {
     const { width, height } = pose.box;
     screenspace += width * height;
   }
 
-  // nearestZ = poses.reduce(
-  //   (minZOuter, { keypoints3D }) =>
-  //     Math.min(
-  //       keypoints3D
-  //         .filter(({ confidence }) => confidence >= minKeypointConfidence)
-  //         .reduce((minZInner, { z }) => Math.min(minZInner, z), minZOuter),
-  //       minZOuter
-  //     ),
-  //   Number.POSITIVE_INFINITY
-  // );
-
-  // const clampedNearestZ = Math.max(Math.min(nearestZ, maxZ), minZ);
-  // relativeProximity = 1.0 - (clampedNearestZ - minZ) / (maxZ - minZ);
-  relativeProximity = Math.min(1, screenspace / (640 * 480));
-
-  // console.log(nearestZ, relativeProximity);
+  relativeProximity = Math.max(0.1, Math.min(1, screenspace / (640 * 480)));
 }
 
 $(document).ready(function () {
