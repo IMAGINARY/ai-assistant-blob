@@ -131,7 +131,7 @@ $(document).ready(function () {
   let geometry = new THREE.SphereGeometry(0.8, 128, 128);
 
   let material = new THREE.MeshPhongMaterial({
-    color: 0xe4ecfa,
+    color: 0xfcccb3,
     shininess: 100,
   });
 
