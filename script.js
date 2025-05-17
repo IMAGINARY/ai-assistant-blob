@@ -8,7 +8,6 @@ const loudnessFactor = 50;
 let video;
 let bodyPose;
 let poses = [];
-let invertProximity = false;
 
 const minKeypointConfidence = 0.75;
 
@@ -98,23 +97,11 @@ function gotPoses(results) {
     screenspace += width * height;
   }
 
-  if (invertProximity) {
-    relativeProximity = Math.max(
-      0.1,
-      Math.min(1, 1 - screenspace / (640 * 480))
-    );
-  } else {
-    relativeProximity = Math.max(0.1, Math.min(1, screenspace / (640 * 480)));
-  }
+  relativeProximity = Math.max(0.1, Math.min(1, 1 - screenspace / (640 * 480)));
 }
 
 $(document).ready(function () {
   let processingSlider = $('input[name="processing"]');
-  let invertProximityCheck = $('input[name="invert-proximity"]');
-
-  invertProximityCheck.on("change", () => {
-    invertProximity = invertProximityCheck.is(":checked");
-  });
 
   let $canvas = $("#blob canvas"),
     canvas = $canvas[0],
