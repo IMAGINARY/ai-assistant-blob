@@ -159,6 +159,8 @@ $(document).ready(function () {
 
     time += timeDiff * 0.00005 * (1 + relativeProximity * proximityFactor);
 
+    sphere.material.color.setHSL((time / 20) % 1, 0.75, 0.875);
+
     //time += timeDiff * 0.00005 * speedSlider.val();
 
     //    let spikes = spikesSlider.val() * processingSlider.val();
