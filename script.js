@@ -159,11 +159,16 @@ $(document).ready(function () {
 
     time += timeDiff * 0.00005 * (1 + relativeProximity * proximityFactor);
 
-    sphere.material.color.setHSL((time / 20) % 1, 0.75, 0.875);
-
-    //time += timeDiff * 0.00005 * speedSlider.val();
-
-    //    let spikes = spikesSlider.val() * processingSlider.val();
+    let hue = (time / 20) % 1;
+    // Desaturate the area starting around purple to match the color scheme
+    let baseSat = 0.75;
+    let desatStart = 5 / 8;
+    let sat =
+      hue > desatStart
+        ? baseSat *
+          (1 - Math.min(1 - hue, hue - desatStart) / ((1 - desatStart) / 2))
+        : baseSat;
+    sphere.material.color.setHSL(hue, sat, 0.875);
 
     let spikes =
       (0.5 + 1.5 * envelope * loudnessFactor) * processingSlider.val();
