@@ -3,6 +3,9 @@ let level = 0;
 let samples = new Array(32).fill(0);
 let envelope = 0;
 
+// Fix the width and height of the canvas
+const width = 3840;
+const height = 2160;
 const loudnessFactor = 50;
 
 let video;
@@ -24,7 +27,7 @@ function preload() {
 }
 
 function setup() {
-  createCanvas(windowWidth, 200);
+  createCanvas(width, 200);
   userStartAudio();
 
   //create & start an audio input
@@ -103,7 +106,7 @@ function gotPoses(results) {
 $(document).ready(function () {
   let processingSlider = $('input[name="processing"]');
 
-  let $canvas = $("#blob canvas"),
+  let $canvas = $(".blob"),
     canvas = $canvas[0],
     renderer = new THREE.WebGLRenderer({
       canvas: canvas,
@@ -113,16 +116,11 @@ $(document).ready(function () {
     }),
     simplex = new SimplexNoise();
 
-  renderer.setSize($canvas.width(), $canvas.height());
+  renderer.setSize(width, height);
   renderer.setPixelRatio(window.devicePixelRatio || 1);
 
   let scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(
-    45,
-    $canvas.width() / $canvas.height(),
-    0.1,
-    1000
-  );
+  const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
 
   camera.position.z = 5;
 
@@ -177,7 +175,7 @@ $(document).ready(function () {
       let p = sphere.geometry.vertices[i];
       p.normalize();
       p.multiplyScalar(
-        1 +
+        0.75 +
           0.3 *
             simplex.noise3D(
               p.x * spikes + time,

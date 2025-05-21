@@ -11,23 +11,23 @@
   </head>
   <body>
     <!-- partial:index.partial.html -->
-    <div id="blob">
-      <canvas></canvas>
-    </div>
-
-    <div class="controls">
-      <div>
-        <label>Processing</label>
-        <input
-          type="range"
-          min=".6"
-          max="2.4"
-          value="1"
-          step=".01"
-          name="processing"
-        />
+    <main id="app">
+      <canvas class="blob"></canvas>
+      <div class="controls">
+        <div>
+          <label>Processing</label>
+          <input
+            type="range"
+            min=".6"
+            max="2.4"
+            value="1"
+            step=".01"
+            name="processing"
+          />
+        </div>
       </div>
-    </div>
+    </main>
+
     <!-- partial -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/105/three.min.js"></script>
