@@ -211,8 +211,10 @@ function toggleControls() {
   if (visible) {
     $(".controls").css("visibility", "hidden");
     $(".p5Canvas").css("visibility", "hidden");
+    $("#app").css("border", "none");
   } else {
     $(".controls").css("visibility", "visible");
     $(".p5Canvas").css("visibility", "visible");
+    $("#app").css("border", "1px solid red");
   }
 }
