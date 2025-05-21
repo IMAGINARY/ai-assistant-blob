@@ -106,6 +106,12 @@ function gotPoses(results) {
 $(document).ready(function () {
   let processingSlider = $('input[name="processing"]');
 
+  $(document).on("keydown", (e) => {
+    if (e.key === "d") {
+      toggleControls();
+    }
+  });
+
   let $canvas = $(".blob"),
     canvas = $canvas[0],
     renderer = new THREE.WebGLRenderer({
@@ -199,3 +205,14 @@ $(document).ready(function () {
   lastTimestamp = document.timeline.currentTime;
   requestAnimationFrame(animate);
 });
+
+function toggleControls() {
+  const visible = $(".controls").css("visibility") !== "hidden";
+  if (visible) {
+    $(".controls").css("visibility", "hidden");
+    $(".p5Canvas").css("visibility", "hidden");
+  } else {
+    $(".controls").css("visibility", "visible");
+    $(".p5Canvas").css("visibility", "visible");
+  }
+}

@@ -10,6 +10,11 @@
   translate: 180px -80px;
 }
 
+.controls,
+.p5Canvas {
+  visibility: hidden;
+}
+
 .controls {
   background: #3f4656;
   display: flex;
