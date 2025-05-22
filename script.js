@@ -39,25 +39,25 @@ async function setup() {
 
   //create & start an audio input
   mic = new p5.AudioIn();
-  if (searchParams.has("audioId")) {
+  if (searchParams.has("audioDeviceId")) {
     const audioDevices = await new Promise((resolve) => {
       mic.getSources((sources) => {
         resolve(sources);
       });
     });
     const index = audioDevices.findIndex(
-      (device) => device.deviceId === searchParams.get("audioId")
+      (device) => device.deviceId === searchParams.get("audioDeviceId")
     );
     mic.setSource(index);
   }
   mic.start();
 
-  // Use provided `videoId` from search params, if available.
-  if (searchParams.has("videoId")) {
+  // Use provided `videoDeviceId` from search params, if available.
+  if (searchParams.has("videoDeviceId")) {
     video = createCapture({
       video: {
         deviceId: {
-          exact: searchParams.get("videoId"),
+          exact: searchParams.get("videoDeviceId"),
         },
       },
     });
