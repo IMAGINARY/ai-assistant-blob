@@ -4,8 +4,8 @@ let samples = new Array(32).fill(0);
 let envelope = 0;
 
 // Fix the width and height of the canvas
-const width = 3840;
-const height = 2160;
+const canvasWidth = 3840;
+const canvasHeight = 2160;
 const loudnessFactor = 50;
 
 let video;
@@ -26,16 +26,46 @@ function preload() {
   bodyPose = ml5.bodyPose();
 }
 
-function setup() {
-  createCanvas(width, 200);
+async function setup() {
+  const searchParams = new URL(document.location.toString()).searchParams;
+  createCanvas(canvasWidth, 200);
   userStartAudio();
+
+  // Log all devices for
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  for (const device of devices) {
+    console.log(`${device.label} ${device.kind}: id = ${device.deviceId}`);
+  }
 
   //create & start an audio input
   mic = new p5.AudioIn();
+  if (searchParams.has("audioId")) {
+    const audioDevices = await new Promise((resolve) => {
+      mic.getSources((sources) => {
+        resolve(sources);
+      });
+    });
+    const index = audioDevices.findIndex(
+      (device) => device.deviceId === searchParams.get("audioId")
+    );
+    mic.setSource(index);
+  }
   mic.start();
 
+  // Use provided `videoId` from search params, if available.
+  if (searchParams.has("videoId")) {
+    video = createCapture({
+      video: {
+        deviceId: {
+          exact: searchParams.get("videoId"),
+        },
+      },
+    });
+  } else {
+    video = createCapture(VIDEO);
+  }
+
   // Create the video and hide it
-  video = createCapture(VIDEO);
   video.size(640, 480);
   video.hide();
 
@@ -122,11 +152,16 @@ $(document).ready(function () {
     }),
     simplex = new SimplexNoise();
 
-  renderer.setSize(width, height);
+  renderer.setSize(canvasWidth, canvasHeight);
   renderer.setPixelRatio(window.devicePixelRatio || 1);
 
   let scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+  const camera = new THREE.PerspectiveCamera(
+    45,
+    canvasWidth / canvasHeight,
+    0.1,
+    1000
+  );
 
   camera.position.z = 5;
 
