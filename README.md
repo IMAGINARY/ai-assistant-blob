@@ -1,7 +1,11 @@
 # AI Assistant Blob
 
-A Pen created on CodePen.
+An AI assistant that responds to voice and proximity.
 
 Original URL: [https://codepen.io/porst17/pen/raNmzLM](https://codepen.io/porst17/pen/raNmzLM).
 
 Inpiration https://dribbble.com/shots/6546603-AI-Assistant
+
+# Configuration
+
+Video and audio input can be configured using the query parameters `videoDeviceId` and `audioDeviceId`, respectively. Devices IDs are logged to the console.
