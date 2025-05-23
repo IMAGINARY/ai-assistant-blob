@@ -13,10 +13,6 @@ let bodyPose;
 let poses = [];
 
 const minKeypointConfidence = 0.75;
-
-let nearestZ = Number.POSITIVE_INFINITY;
-const minZ = -0.5;
-const maxZ = -0.2;
 const proximityFactor = 50;
 
 let relativeProximity = 0;
@@ -31,7 +27,7 @@ async function setup() {
   createCanvas(canvasWidth, 200);
   userStartAudio();
 
-  // Log all devices for
+  // Log all devices to be able to set deviceIds
   const devices = await navigator.mediaDevices.enumerateDevices();
   for (const device of devices) {
     console.log(`${device.label} ${device.kind}: id = ${device.deviceId}`);
@@ -88,7 +84,6 @@ function draw() {
   fill(255);
   stroke(0);
 
-  // circle(100, 100, level * loudnessFactor * 100);
   circle(300, 100, envelope * loudnessFactor * 100);
 
   // Draw the webcam video
