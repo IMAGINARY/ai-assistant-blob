@@ -81,6 +81,8 @@ function draw() {
   envelope -= firstSample / samples.length;
   envelope += level / samples.length;
 
+  envelope = clamp(envelope, 0, 0.04);
+
   background(200);
 
   fill(255);
@@ -130,7 +132,7 @@ function gotPoses(results) {
     screenspace += width * height;
   }
 
-  relativeProximity = Math.max(0.1, Math.min(1, 1 - screenspace / (640 * 480)));
+  relativeProximity = clamp(1 - screenspace / (640 * 480), 0.1, 1);
 }
 
 $(document).ready(function () {
@@ -252,4 +254,8 @@ function toggleControls() {
     $(".p5Canvas").css("visibility", "visible");
     $("#app").css("border", "1px solid red");
   }
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
 }
