@@ -165,7 +165,7 @@ $(document).ready(function () {
 
   camera.position.z = 5;
 
-  let geometry = new THREE.SphereGeometry(0.8, 128, 128);
+  let geometry = new THREE.IcosahedronGeometry(0.8, 6);
 
   let material = new THREE.MeshPhongMaterial({
     color: 0xfcccb3,
