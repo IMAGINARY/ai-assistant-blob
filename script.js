@@ -1,4 +1,4 @@
-let mic;
+let mic = null;
 let level = 0;
 let samples = new Array(32).fill(0);
 let envelope = 0;
@@ -8,7 +8,7 @@ const canvasWidth = 3840;
 const canvasHeight = 2160;
 const loudnessFactor = 50;
 
-let video;
+let video = null;
 let bodyPose;
 let poses = [];
 
@@ -22,62 +22,72 @@ function preload() {
   bodyPose = ml5.bodyPose();
 }
 
-async function setup() {
-  const searchParams = new URL(document.location.toString()).searchParams;
-  createCanvas(canvasWidth, 200);
-  userStartAudio();
-
+async function listDevices() {
   // Log all devices to be able to set deviceIds
   const devices = await navigator.mediaDevices.enumerateDevices();
-  for (const device of devices) {
-    console.log(`${device.label} ${device.kind}: id = ${device.deviceId}`);
-  }
+  console.log("Video input devices: ", [...devices]);
+}
 
-  //create & start an audio input
-  mic = new p5.AudioIn();
-  if (searchParams.has("audioDeviceId")) {
-    const audioDevices = await new Promise((resolve) => {
-      mic.getSources((sources) => {
-        resolve(sources);
-      });
-    });
+async function setupMic(id) {
+  const mic = new p5.AudioIn();
+  const audioDevices = await new Promise(mic.getSources.bind(mic));
+  console.log("Audio input devices: ", audioDevices);
+  if(id !== null && typeof id !== "undefined") {
     const index = audioDevices.findIndex(
-      (device) => device.deviceId === searchParams.get("audioDeviceId")
+        (device) => device.deviceId === id
     );
-    mic.setSource(index);
+    if (index === -1)
+      console.log("Unknown audio device id", id);
+    else
+      mic.setSource(index);
   }
   mic.start();
+  return mic;
+}
 
-  // Use provided `videoDeviceId` from search params, if available.
-  if (searchParams.has("videoDeviceId")) {
-    video = createCapture({
-      video: {
-        deviceId: {
-          exact: searchParams.get("videoDeviceId"),
-        },
+async function setupVideo(id) {
+  const constraints = id !== null && typeof id !== "undefined" ? {
+    video: {
+      deviceId: {
+        exact: id,
       },
-    });
-  } else {
-    video = createCapture(VIDEO);
-  }
+    },
+  } : { video: true };
+  return createCapture(constraints);
+}
 
-  // Create the video and hide it
+async function setupAsync() {
+  const searchParams = new URL(document.location.toString()).searchParams;
+
+  await listDevices();
+
+  mic = await setupMic(searchParams.get("audioDeviceId"));
+
+  video = await setupVideo(searchParams.get("videoDeviceId"));
   video.size(640, 480);
   video.hide();
 
-  // Start detecting poses in the webcam video
   bodyPose.detectStart(video, gotPoses);
 }
 
-function draw() {
-  //get the level of amplitude of the mic
-  level = mic.getLevel(1);
-  const firstSample = samples.shift();
-  samples.push(level);
-  envelope -= firstSample / samples.length;
-  envelope += level / samples.length;
+function setup() {
+  userStartAudio();
+  createCanvas(canvasWidth, 200);
 
-  envelope = clamp(envelope, 0, 0.04);
+  setupAsync();
+}
+
+function draw() {
+  if(mic) {
+    //get the level of amplitude of the mic
+    level = mic.getLevel(1);
+    const firstSample = samples.shift();
+    samples.push(level);
+    envelope -= firstSample / samples.length;
+    envelope += level / samples.length;
+
+    envelope = clamp(envelope, 0, 0.04);
+  }
 
   background(200);
 
@@ -87,7 +97,8 @@ function draw() {
   circle(300, 100, envelope * loudnessFactor * 100);
 
   // Draw the webcam video
-  image(video, 400, 0, (200 * 640) / 480, 200);
+  if(video)
+    image(video, 400, 0, (200 * 640) / 480, 200);
 
   // Draw all the tracked landmark points
   for (let i = 0; i < poses.length; i++) {
