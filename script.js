@@ -6,17 +6,33 @@ let envelope = 0;
 // Fix the width and height of the canvas
 const canvasWidth = 3840;
 const canvasHeight = 2160;
-const loudnessFactor = 50;
 
 let video = null;
+const videoWidth = 640;
+const videoHeight = 480;
 let bodyPose;
 let poses = [];
 
 const minKeypointConfidence = 0.75;
-const proximityFactor = 50;
 
 let relativeProximity = 0;
 let debugMode = false;
+
+// Min and max sound volume
+const minEnvelope = 0;
+const maxEnvelope = 0.04;
+const loudnessFactor = 50;
+
+// Min and max proximity scale
+const minProximity = 0.1;
+const maxProximity = 1;
+const proximityFactor = 50;
+
+const colorSpeed = 0.05;
+const blobBaseRadius = 0.75;
+// Blob offset from the center of the screen.
+const blobPosX = 180;
+const blobPosY = -80;
 
 function preload() {
   // Load the bodyPose model
@@ -64,7 +80,7 @@ async function setupAsync() {
   mic = await setupMic(searchParams.get("audioDeviceId"));
 
   video = await setupVideo(searchParams.get("videoDeviceId"));
-  video.size(640, 480);
+  video.size(videoWidth, videoHeight);
   video.hide();
 
   bodyPose.detectStart(video, gotPoses);
@@ -85,8 +101,7 @@ function draw() {
     samples.push(level);
     envelope -= firstSample / samples.length;
     envelope += level / samples.length;
-
-    envelope = clamp(envelope, 0, 0.04);
+    envelope = clamp(envelope, minEnvelope, maxEnvelope);
   }
 
   if (debugMode) {
@@ -98,7 +113,7 @@ function draw() {
     circle(300, 100, envelope * loudnessFactor * 100);
 
     // Draw the webcam video
-    if (video) image(video, 400, 0, (200 * 640) / 480, 200);
+    if (video) image(video, 400, 0, (200 * videoWidth) / videoHeight, 200);
 
     // Draw all the tracked landmark points
     for (let i = 0; i < poses.length; i++) {
@@ -109,8 +124,8 @@ function draw() {
         fill(0, 255, 0);
         noStroke();
         circle(
-          400 + ((keypoint.x / 640) * 200 * 640) / 480,
-          (keypoint.y / 480) * 200,
+          400 + ((keypoint.x / videoWidth) * 200 * videoWidth) / videoHeight,
+          (keypoint.y / videoHeight) * 200,
           10
         );
       }
@@ -118,13 +133,17 @@ function draw() {
 
     fill(255);
     stroke(0);
-    circle(400 + (200 * 640) / 480 + 100, 100, relativeProximity * 100);
+    circle(
+      400 + (200 * videoWidth) / videoHeight + 100,
+      100,
+      relativeProximity * 100
+    );
 
     fill(0);
     noStroke();
     text("Loudness", 200 + 10, 20);
     text("Bodypose tracking", 400 + 10, 20);
-    text("Proximity", 400 + (200 * 640) / 480 + 10, 20);
+    text("Proximity", 400 + (200 * videoWidth) / videoHeight + 10, 20);
   }
 }
 
@@ -139,10 +158,16 @@ function gotPoses(results) {
     screenspace += width * height;
   }
 
-  relativeProximity = clamp(1 - screenspace / (640 * 480), 0.1, 1);
+  relativeProximity = clamp(
+    1 - screenspace / (videoWidth * videoHeight),
+    minProximity,
+    maxProximity
+  );
 }
 
 $(document).ready(function () {
+  $(document.documentElement).css("--blob-offset-x", `${blobPosX}px`);
+  $(document.documentElement).css("--blob-offset-y", `${blobPosY}px`);
   let processingSlider = $('input[name="processing"]');
 
   $(document).on("keydown", (e) => {
@@ -174,7 +199,7 @@ $(document).ready(function () {
 
   camera.position.z = 5;
 
-  let geometry = new THREE.IcosahedronGeometry(0.8, 6);
+  let geometry = new THREE.IcosahedronGeometry(blobBaseRadius, 6);
 
   let material = new THREE.MeshPhongMaterial({
     color: 0xfcccb3,
@@ -207,7 +232,7 @@ $(document).ready(function () {
 
     time += timeDiff * 0.00005 * (1 + relativeProximity * proximityFactor);
 
-    let hue = (time / 20) % 1;
+    let hue = (time * colorSpeed) % 1;
     // Desaturate the area starting around purple to match the color scheme
     let baseSat = 0.75;
     let desatStart = 5 / 8;
@@ -225,7 +250,7 @@ $(document).ready(function () {
       let p = sphere.geometry.vertices[i];
       p.normalize();
       p.multiplyScalar(
-        0.75 +
+        blobBaseRadius +
           0.3 *
             simplex.noise3D(
               p.x * spikes + time,
