@@ -18,15 +18,19 @@ const minKeypointConfidence = 0.75;
 let relativeProximity = 0;
 let debugMode = false;
 
-// Min and max sound volume
+// Sound parameters
 const minEnvelope = 0;
 const maxEnvelope = 0.04;
 const loudnessFactor = 50;
+const loudnessSmoothing = 0.5;
+const loudnessMaxDelta = 0.2;
 
-// Min and max proximity scale
+// Proximity parameters
 const minProximity = 0.1;
 const maxProximity = 1;
 const proximityFactor = 50;
+const proximitySmoothing = 0.5;
+const proximityMaxDelta = 0.1;
 
 const colorSpeed = 0.05;
 const blobBaseRadius = 0.75;
@@ -99,9 +103,9 @@ function draw() {
     level = mic.getLevel(1);
     const firstSample = samples.shift();
     samples.push(level);
-    envelope -= firstSample / samples.length;
-    envelope += level / samples.length;
-    envelope = clamp(envelope, minEnvelope, maxEnvelope);
+    let newEnvelope = envelope + (level - firstSample) / samples.length;
+    newEnvelope = clamp(newEnvelope, minEnvelope, maxEnvelope);
+    envelope = lerp(envelope, newEnvelope, loudnessSmoothing, loudnessMaxDelta);
   }
 
   if (debugMode) {
@@ -158,10 +162,17 @@ function gotPoses(results) {
     screenspace += width * height;
   }
 
-  relativeProximity = clamp(
+  let newProximity = clamp(
     1 - screenspace / (videoWidth * videoHeight),
     minProximity,
     maxProximity
+  );
+
+  relativeProximity = lerp(
+    relativeProximity,
+    newProximity,
+    proximitySmoothing,
+    proximityMaxDelta
   );
 }
 
@@ -290,4 +301,10 @@ function toggleControls() {
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function lerp(current, goal, smoothingFactor, maxSpeed) {
+  let output = goal * smoothingFactor + current * (1 - smoothingFactor);
+  let diff = output - current;
+  return current + Math.sign(diff) * Math.min(maxSpeed, Math.abs(diff));
 }
