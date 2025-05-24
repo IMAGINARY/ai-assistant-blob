@@ -16,6 +16,7 @@ const minKeypointConfidence = 0.75;
 const proximityFactor = 50;
 
 let relativeProximity = 0;
+let debugMode = false;
 
 function preload() {
   // Load the bodyPose model
@@ -32,27 +33,26 @@ async function setupMic(id) {
   const mic = new p5.AudioIn();
   const audioDevices = await new Promise(mic.getSources.bind(mic));
   console.log("Audio input devices: ", audioDevices);
-  if(id !== null && typeof id !== "undefined") {
-    const index = audioDevices.findIndex(
-        (device) => device.deviceId === id
-    );
-    if (index === -1)
-      console.log("Unknown audio device id", id);
-    else
-      mic.setSource(index);
+  if (id !== null && typeof id !== "undefined") {
+    const index = audioDevices.findIndex((device) => device.deviceId === id);
+    if (index === -1) console.log("Unknown audio device id", id);
+    else mic.setSource(index);
   }
   mic.start();
   return mic;
 }
 
 async function setupVideo(id) {
-  const constraints = id !== null && typeof id !== "undefined" ? {
-    video: {
-      deviceId: {
-        exact: id,
-      },
-    },
-  } : { video: true };
+  const constraints =
+    id !== null && typeof id !== "undefined"
+      ? {
+          video: {
+            deviceId: {
+              exact: id,
+            },
+          },
+        }
+      : { video: true };
   return createCapture(constraints);
 }
 
@@ -78,7 +78,7 @@ function setup() {
 }
 
 function draw() {
-  if(mic) {
+  if (mic) {
     //get the level of amplitude of the mic
     level = mic.getLevel(1);
     const firstSample = samples.shift();
@@ -89,42 +89,43 @@ function draw() {
     envelope = clamp(envelope, 0, 0.04);
   }
 
-  background(200);
+  if (debugMode) {
+    background(200);
 
-  fill(255);
-  stroke(0);
+    fill(255);
+    stroke(0);
 
-  circle(300, 100, envelope * loudnessFactor * 100);
+    circle(300, 100, envelope * loudnessFactor * 100);
 
-  // Draw the webcam video
-  if(video)
-    image(video, 400, 0, (200 * 640) / 480, 200);
+    // Draw the webcam video
+    if (video) image(video, 400, 0, (200 * 640) / 480, 200);
 
-  // Draw all the tracked landmark points
-  for (let i = 0; i < poses.length; i++) {
-    let pose = poses[i];
-    for (let j = 0; j < pose.keypoints.length; j++) {
-      let keypoint = pose.keypoints[j];
-      if (keypoint.confidence < minKeypointConfidence) continue;
-      fill(0, 255, 0);
-      noStroke();
-      circle(
-        400 + ((keypoint.x / 640) * 200 * 640) / 480,
-        (keypoint.y / 480) * 200,
-        10
-      );
+    // Draw all the tracked landmark points
+    for (let i = 0; i < poses.length; i++) {
+      let pose = poses[i];
+      for (let j = 0; j < pose.keypoints.length; j++) {
+        let keypoint = pose.keypoints[j];
+        if (keypoint.confidence < minKeypointConfidence) continue;
+        fill(0, 255, 0);
+        noStroke();
+        circle(
+          400 + ((keypoint.x / 640) * 200 * 640) / 480,
+          (keypoint.y / 480) * 200,
+          10
+        );
+      }
     }
+
+    fill(255);
+    stroke(0);
+    circle(400 + (200 * 640) / 480 + 100, 100, relativeProximity * 100);
+
+    fill(0);
+    noStroke();
+    text("Loudness", 200 + 10, 20);
+    text("Bodypose tracking", 400 + 10, 20);
+    text("Proximity", 400 + (200 * 640) / 480 + 10, 20);
   }
-
-  fill(255);
-  stroke(0);
-  circle(400 + (200 * 640) / 480 + 100, 100, relativeProximity * 100);
-
-  fill(0);
-  noStroke();
-  text("Loudness", 200 + 10, 20);
-  text("Bodypose tracking", 400 + 10, 20);
-  text("Proximity", 400 + (200 * 640) / 480 + 10, 20);
 }
 
 // Callback function for when bodyPose outputs data
@@ -250,8 +251,7 @@ $(document).ready(function () {
 });
 
 function toggleControls() {
-  const visible = $(".controls").css("visibility") !== "hidden";
-  if (visible) {
+  if (debugMode) {
     $(".controls").css("visibility", "hidden");
     $(".p5Canvas").css("visibility", "hidden");
     $("#app").css("border", "none");
@@ -260,6 +260,7 @@ function toggleControls() {
     $(".p5Canvas").css("visibility", "visible");
     $("#app").css("border", "1px solid red");
   }
+  debugMode = !debugMode;
 }
 
 function clamp(value, min, max) {
