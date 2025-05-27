@@ -43,6 +43,9 @@ const parameters = {
 
   // Processing parameters
   processing: 0.6,
+
+  gammaFactor: 0.5,
+  ambientLightIntensity: 0.5,
 }
 
 function kc2cc(kc) {
@@ -224,6 +227,8 @@ $(document).ready(function () {
   renderer.setSize(canvasWidth, canvasHeight);
   renderer.setPixelRatio(window.devicePixelRatio || 1);
 
+  renderer.gammaOutput = true;
+
   let scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(
     45,
@@ -251,7 +256,7 @@ $(document).ready(function () {
   lightBottom.castShadow = true;
   scene.add(lightBottom);
 
-  let ambientLight = new THREE.AmbientLight(0x798296);
+  let ambientLight = new THREE.AmbientLight(0xffffff, parameters.ambientLightIntensity);
   scene.add(ambientLight);
 
   let sphere = new THREE.Mesh(geometry, material);
@@ -262,6 +267,9 @@ $(document).ready(function () {
   let lastTimestamp;
 
   let update = (timestamp) => {
+    renderer.gammaFactor = parameters.gammaFactor;
+    ambientLight.intensity = parameters.ambientLightIntensity;
+
     const timeDiff = timestamp - lastTimestamp;
     lastTimestamp = timestamp;
 
