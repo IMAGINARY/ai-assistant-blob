@@ -22,21 +22,21 @@ const parameters = {
   // Sound parameters
   minEnvelope: 0,
   maxEnvelope: 0.04,
-  loudnessFactor: 50,
+  loudnessFactor: 300,
   loudnessSmoothing: 0.5,
   loudnessMaxDelta: 0.2,
 
 // Proximity parameters
   minProximity: 0.1,
   maxProximity: 1,
-  proximityFactor: 50,
+  proximityFactor: 7,
   proximitySmoothing: 0.5,
   proximityMaxDelta: 0.1,
 
-  colorSpeed: 0.05,
+  colorSpeed: 0.02,
   baseSaturation: 0.75,
 
-  blobBaseRadius: 0.75,
+  blobBaseRadius: 1,
 // Blob offset from the center of the screen.
   blobOffsetX: -180,
   blobOffsetY: -80,
