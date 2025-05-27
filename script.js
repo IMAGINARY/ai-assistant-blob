@@ -40,6 +40,9 @@ const parameters = {
 // Blob offset from the center of the screen.
   blobOffsetX: -180,
   blobOffsetY: -80,
+
+  // Processing parameters
+  processing: 0.6,
 }
 
 function kc2cc(kc) {
@@ -202,8 +205,6 @@ $(document).ready(function () {
   for(let [k, v] of Object.entries(parameters))
     document.documentElement.style.setProperty(`--${cc2kc(k)}`, v);
 
-  let processingSlider = $('input[name="processing"]');
-
   $(document).on("keydown", (e) => {
     if (e.key === "d") {
       toggleControls();
@@ -278,7 +279,7 @@ $(document).ready(function () {
     sphere.material.color.setHSL(hue, sat, 0.875);
 
     let spikes =
-      (0.5 + 1.5 * envelope * parameters.loudnessFactor) * processingSlider.val();
+      (0.5 + 1.5 * envelope * parameters.loudnessFactor) * parameters.processing;
 
     for (let i = 0; i < sphere.geometry.vertices.length; i++) {
       let p = sphere.geometry.vertices[i];
