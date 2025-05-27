@@ -34,6 +34,8 @@ const parameters = {
   proximityMaxDelta: 0.1,
 
   colorSpeed: 0.05,
+  baseSaturation: 0.75,
+
   blobBaseRadius: 0.75,
 // Blob offset from the center of the screen.
   blobOffsetX: -180,
@@ -266,7 +268,7 @@ $(document).ready(function () {
 
     let hue = (time * parameters.colorSpeed) % 1;
     // Desaturate the area starting around purple to match the color scheme
-    let baseSat = 0.75;
+    const baseSat = parameters.baseSaturation;
     let desatStart = 5 / 8;
     let sat =
       hue > desatStart
