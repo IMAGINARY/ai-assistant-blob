@@ -18,25 +18,37 @@ const minKeypointConfidence = 0.75;
 let relativeProximity = 0;
 let debugMode = false;
 
-// Sound parameters
-const minEnvelope = 0;
-const maxEnvelope = 0.04;
-const loudnessFactor = 50;
-const loudnessSmoothing = 0.5;
-const loudnessMaxDelta = 0.2;
+const parameters = {
+  // Sound parameters
+  minEnvelope: 0,
+  maxEnvelope: 0.04,
+  loudnessFactor: 50,
+  loudnessSmoothing: 0.5,
+  loudnessMaxDelta: 0.2,
 
 // Proximity parameters
-const minProximity = 0.1;
-const maxProximity = 1;
-const proximityFactor = 50;
-const proximitySmoothing = 0.5;
-const proximityMaxDelta = 0.1;
+  minProximity: 0.1,
+  maxProximity: 1,
+  proximityFactor: 50,
+  proximitySmoothing: 0.5,
+  proximityMaxDelta: 0.1,
 
-const colorSpeed = 0.05;
-const blobBaseRadius = 0.75;
+  colorSpeed: 0.05,
+  blobBaseRadius: 0.75,
 // Blob offset from the center of the screen.
-const blobPosX = 180;
-const blobPosY = -80;
+  blobOffsetX: -180,
+  blobOffsetY: -80,
+}
+
+function kc2cc(kc) {
+  // Convert kebab case to camel case
+    return kc.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+}
+
+function cc2kc(cc) {
+  // Convert camel case to kebab case
+  return cc.replace(/([a-z])([A-Z])/g, (g) => g[0] + "-" + g[1].toLowerCase());
+}
 
 function preload() {
   // Load the bodyPose model
@@ -98,14 +110,22 @@ function setup() {
 }
 
 function draw() {
+  const computedStyle = getComputedStyle(document.documentElement);
+  for(let k of Object.keys(parameters)) {
+    const cssProperty = `--${cc2kc(k)}`;
+    const cssValue = computedStyle.getPropertyValue(cssProperty);
+    const v = Number.parseFloat(cssValue);
+    parameters[k] = v;
+  }
+
   if (mic) {
     //get the level of amplitude of the mic
     level = mic.getLevel(1);
     const firstSample = samples.shift();
     samples.push(level);
     let newEnvelope = envelope + (level - firstSample) / samples.length;
-    newEnvelope = clamp(newEnvelope, minEnvelope, maxEnvelope);
-    envelope = lerp(envelope, newEnvelope, loudnessSmoothing, loudnessMaxDelta);
+    newEnvelope = clamp(newEnvelope, parameters.minEnvelope, parameters.maxEnvelope);
+    envelope = lerp(envelope, newEnvelope, parameters.loudnessSmoothing, parameters.loudnessMaxDelta);
   }
 
   if (debugMode) {
@@ -114,7 +134,7 @@ function draw() {
     fill(255);
     stroke(0);
 
-    circle(300, 100, envelope * loudnessFactor * 100);
+    circle(300, 100, envelope * parameters.loudnessFactor * 100);
 
     // Draw the webcam video
     if (video) image(video, 400, 0, (200 * videoWidth) / videoHeight, 200);
@@ -164,21 +184,22 @@ function gotPoses(results) {
 
   let newProximity = clamp(
     1 - screenspace / (videoWidth * videoHeight),
-    minProximity,
-    maxProximity
+    parameters.minProximity,
+    parameters.maxProximity
   );
 
   relativeProximity = lerp(
     relativeProximity,
     newProximity,
-    proximitySmoothing,
-    proximityMaxDelta
+    parameters.proximitySmoothing,
+    parameters.proximityMaxDelta
   );
 }
 
 $(document).ready(function () {
-  $(document.documentElement).css("--blob-offset-x", `${blobPosX}px`);
-  $(document.documentElement).css("--blob-offset-y", `${blobPosY}px`);
+  for(let [k, v] of Object.entries(parameters))
+    document.documentElement.style.setProperty(`--${cc2kc(k)}`, v);
+
   let processingSlider = $('input[name="processing"]');
 
   $(document).on("keydown", (e) => {
@@ -210,7 +231,7 @@ $(document).ready(function () {
 
   camera.position.z = 5;
 
-  let geometry = new THREE.IcosahedronGeometry(blobBaseRadius, 6);
+  let geometry = new THREE.IcosahedronGeometry(parameters.blobBaseRadius, 6);
 
   let material = new THREE.MeshPhongMaterial({
     color: 0xfcccb3,
@@ -241,9 +262,9 @@ $(document).ready(function () {
     const timeDiff = timestamp - lastTimestamp;
     lastTimestamp = timestamp;
 
-    time += timeDiff * 0.00005 * (1 + relativeProximity * proximityFactor);
+    time += timeDiff * 0.00005 * (1 + relativeProximity * parameters.proximityFactor);
 
-    let hue = (time * colorSpeed) % 1;
+    let hue = (time * parameters.colorSpeed) % 1;
     // Desaturate the area starting around purple to match the color scheme
     let baseSat = 0.75;
     let desatStart = 5 / 8;
@@ -255,13 +276,13 @@ $(document).ready(function () {
     sphere.material.color.setHSL(hue, sat, 0.875);
 
     let spikes =
-      (0.5 + 1.5 * envelope * loudnessFactor) * processingSlider.val();
+      (0.5 + 1.5 * envelope * parameters.loudnessFactor) * processingSlider.val();
 
     for (let i = 0; i < sphere.geometry.vertices.length; i++) {
       let p = sphere.geometry.vertices[i];
       p.normalize();
       p.multiplyScalar(
-        blobBaseRadius +
+          parameters.blobBaseRadius +
           0.3 *
             simplex.noise3D(
               p.x * spikes + time,
