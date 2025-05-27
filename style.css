@@ -6,7 +6,7 @@
 
 /* Shift the canvas's position to be centered at the exhibit mirror.  */
 .blob {
-  translate: var(--blob-offset-x) var(--blob-offset-y);
+  transform: translate(calc(1px * var(--blob-offset-x)), calc(1px * var(--blob-offset-y)));
 }
 
 .controls,
