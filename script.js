@@ -253,7 +253,7 @@ $(document).ready(function () {
   let geometry = new THREE.IcosahedronGeometry(parameters.blobBaseRadius, 6);
 
   let material = new THREE.MeshPhongMaterial({
-    color: 0xfcccb3,
+    color: 0xffe0d4,
     shininess: 100,
   });
 
@@ -290,6 +290,7 @@ $(document).ready(function () {
     time +=
       timeDiff * 0.00005 * (1 + relativeProximity * parameters.proximityFactor);
 
+    /*
     let hue = (time * parameters.colorSpeed) % 1;
     // Desaturate the area starting around purple to match the color scheme
     const baseSat = parameters.baseSaturation;
@@ -300,6 +301,7 @@ $(document).ready(function () {
           (1 - Math.min(1 - hue, hue - desatStart) / ((1 - desatStart) / 2))
         : baseSat;
     sphere.material.color.setHSL(hue, sat, 0.875);
+    */
 
     let spikes =
       (0.5 + 1.5 * envelope * parameters.loudnessFactor) *
