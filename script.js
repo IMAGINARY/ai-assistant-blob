@@ -26,7 +26,7 @@ const parameters = {
   loudnessSmoothing: 0.5,
   loudnessMaxDelta: 0.2,
 
-// Proximity parameters
+  // Proximity parameters
   minProximity: 0.1,
   maxProximity: 1,
   proximityFactor: 7,
@@ -37,7 +37,7 @@ const parameters = {
   baseSaturation: 0.75,
 
   blobBaseRadius: 1,
-// Blob offset from the center of the screen.
+  // Blob offset from the center of the screen.
   blobOffsetX: -180,
   blobOffsetY: -80,
 
@@ -46,11 +46,11 @@ const parameters = {
 
   gammaFactor: 0.5,
   ambientLightIntensity: 0.5,
-}
+};
 
 function kc2cc(kc) {
   // Convert kebab case to camel case
-    return kc.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+  return kc.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
 }
 
 function cc2kc(cc) {
@@ -60,7 +60,9 @@ function cc2kc(cc) {
 
 function preload() {
   // Load the bodyPose model
-  bodyPose = ml5.bodyPose();
+  bodyPose = ml5.bodyPose({
+    modelUrl: "./vendor/movenet-tfjs-multipose-lightning-v1/model.json",
+  });
 }
 
 async function listDevices() {
@@ -119,7 +121,7 @@ function setup() {
 
 function draw() {
   const computedStyle = getComputedStyle(document.documentElement);
-  for(let k of Object.keys(parameters)) {
+  for (let k of Object.keys(parameters)) {
     const cssProperty = `--${cc2kc(k)}`;
     const cssValue = computedStyle.getPropertyValue(cssProperty);
     const v = Number.parseFloat(cssValue);
@@ -132,8 +134,17 @@ function draw() {
     const firstSample = samples.shift();
     samples.push(level);
     let newEnvelope = envelope + (level - firstSample) / samples.length;
-    newEnvelope = clamp(newEnvelope, parameters.minEnvelope, parameters.maxEnvelope);
-    envelope = lerp(envelope, newEnvelope, parameters.loudnessSmoothing, parameters.loudnessMaxDelta);
+    newEnvelope = clamp(
+      newEnvelope,
+      parameters.minEnvelope,
+      parameters.maxEnvelope
+    );
+    envelope = lerp(
+      envelope,
+      newEnvelope,
+      parameters.loudnessSmoothing,
+      parameters.loudnessMaxDelta
+    );
   }
 
   if (debugMode) {
@@ -205,7 +216,7 @@ function gotPoses(results) {
 }
 
 $(document).ready(function () {
-  for(let [k, v] of Object.entries(parameters))
+  for (let [k, v] of Object.entries(parameters))
     document.documentElement.style.setProperty(`--${cc2kc(k)}`, v);
 
   $(document).on("keydown", (e) => {
@@ -256,7 +267,10 @@ $(document).ready(function () {
   lightBottom.castShadow = true;
   scene.add(lightBottom);
 
-  let ambientLight = new THREE.AmbientLight(0xffffff, parameters.ambientLightIntensity);
+  let ambientLight = new THREE.AmbientLight(
+    0xffffff,
+    parameters.ambientLightIntensity
+  );
   scene.add(ambientLight);
 
   let sphere = new THREE.Mesh(geometry, material);
@@ -273,7 +287,8 @@ $(document).ready(function () {
     const timeDiff = timestamp - lastTimestamp;
     lastTimestamp = timestamp;
 
-    time += timeDiff * 0.00005 * (1 + relativeProximity * parameters.proximityFactor);
+    time +=
+      timeDiff * 0.00005 * (1 + relativeProximity * parameters.proximityFactor);
 
     let hue = (time * parameters.colorSpeed) % 1;
     // Desaturate the area starting around purple to match the color scheme
@@ -287,13 +302,14 @@ $(document).ready(function () {
     sphere.material.color.setHSL(hue, sat, 0.875);
 
     let spikes =
-      (0.5 + 1.5 * envelope * parameters.loudnessFactor) * parameters.processing;
+      (0.5 + 1.5 * envelope * parameters.loudnessFactor) *
+      parameters.processing;
 
     for (let i = 0; i < sphere.geometry.vertices.length; i++) {
       let p = sphere.geometry.vertices[i];
       p.normalize();
       p.multiplyScalar(
-          parameters.blobBaseRadius +
+        parameters.blobBaseRadius +
           0.3 *
             simplex.noise3D(
               p.x * spikes + time,
