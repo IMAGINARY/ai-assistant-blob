@@ -93,8 +93,9 @@ async function setupVideo(id) {
               exact: id,
             },
           },
+          audio: false
         }
-      : { video: true };
+      : { video: true, audio: false };
   return createCapture(constraints);
 }
 
@@ -108,6 +109,7 @@ async function setupAsync() {
   video = await setupVideo(searchParams.get("videoDeviceId"));
   video.size(videoWidth, videoHeight);
   video.hide();
+  video.volume(0); // mute the video's audio
 
   bodyPose.detectStart(video, gotPoses);
 }
