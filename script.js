@@ -252,7 +252,10 @@ $(document).ready(function () {
 
   camera.position.z = 5;
 
-  let geometry = new THREE.IcosahedronGeometry(parameters.blobBaseRadius, 6);
+  // Create high resolution sphere geometry
+  const levels = 7;
+  const sphereGeometry = createUnitSphereBufferGeometry(levels);
+  const clonedVertices = new Float32Array(sphereGeometry.attributes.position.array);
 
   let material = new THREE.MeshPhongMaterial({
     color: 0xffe0d4,
@@ -275,7 +278,7 @@ $(document).ready(function () {
   );
   scene.add(ambientLight);
 
-  let sphere = new THREE.Mesh(geometry, material);
+  let sphere = new THREE.Mesh(sphereGeometry, material);
 
   scene.add(sphere);
 
@@ -309,23 +312,25 @@ $(document).ready(function () {
       (0.5 + 1.5 * envelope * parameters.loudnessFactor) *
       parameters.processing;
 
-    for (let i = 0; i < sphere.geometry.vertices.length; i++) {
-      let p = sphere.geometry.vertices[i];
-      p.normalize();
-      p.multiplyScalar(
-        parameters.blobBaseRadius +
-          0.3 *
-            simplex.noise3D(
-              p.x * spikes + time,
-              p.y * spikes + time,
-              p.z * spikes + time
-            )
-      );
-    }
+    const positionAttribute = sphere.geometry.getAttribute('position');
+    for (let j = 0; j < positionAttribute.count; j += 1) {
+      const i = j * 3;
+      let x = clonedVertices[i + 0];
+      let y = clonedVertices[i + 1];
+      let z = clonedVertices[i + 2];
 
+      const simplexNoise = simplex.noise3D(
+          x * spikes + time,
+          y * spikes + time,
+          z * spikes + time
+      );
+
+      const newLength = parameters.blobBaseRadius + 0.3 * simplexNoise;
+      positionAttribute.setXYZ(j, x * newLength, y * newLength, z * newLength,);
+    }
+    positionAttribute.needsUpdate = true;
     sphere.geometry.computeVertexNormals();
-    sphere.geometry.normalsNeedUpdate = true;
-    sphere.geometry.verticesNeedUpdate = true;
+    sphere.geometry.vertexNormalsNeedUpdate = true;
   };
 
   function animate(timestamp) {
