@@ -1,7 +1,38 @@
 let mic = null;
 let level = 0;
-let samples = new Array(32).fill(0);
-let envelope = 0;
+let relativeLoudness = 0;
+let relativeProximity = 0;
+
+let spikes = 0;
+let speed = 0;
+
+let attackTime = 0.2; // Attack time in seconds
+let decayTime = 1; // Decay time in seconds
+let sustainLevel = 0.75; // Sustain level (0 to 1)
+let sustainTime = 0; // Sustain time in seconds
+let releaseTime = 2; // Release time in seconds
+
+let envelopeSamples = new Array(Math.ceil(60 * (attackTime + decayTime + sustainTime + releaseTime)))
+    .fill(0).map((_, i) => {
+      let t = i / 60; // Convert sample index to seconds
+      if(t < attackTime)
+        return t / attackTime; // Linear increase during attack
+
+      t -= attackTime; // Adjust time for decay phase
+      if (t < decayTime)
+        return 1 - (t / decayTime) * (1 - sustainLevel); // Linear decrease during decay
+
+      t -= decayTime; // Adjust time for sustain phase
+      if (t < sustainTime)
+        return sustainLevel; // Sustain level
+
+      t -= sustainTime; // Adjust time for release phase
+      if (t <= releaseTime)
+        return sustainLevel * (1 - (t / releaseTime)); // Linear decrease during release
+    });
+
+let samples = new Array(envelopeSamples.length).fill(0);
+let lastSampleTime = performance.now();
 
 // Fix the width and height of the canvas
 const canvasWidth = 3840;
@@ -15,23 +46,28 @@ let poses = [];
 
 const minKeypointConfidence = 0.75;
 
-let relativeProximity = 0;
 let debugMode = false;
 
 const parameters = {
   // Sound parameters
-  minEnvelope: 0,
-  maxEnvelope: 0.04,
-  loudnessFactor: 300,
-  loudnessSmoothing: 0.5,
-  loudnessMaxDelta: 0.2,
+  minLoudness: 0.002,
+  maxLoudness: 0.4,
 
   // Proximity parameters
   minProximity: 0.1,
   maxProximity: 1,
-  proximityFactor: 7,
-  proximitySmoothing: 0.5,
-  proximityMaxDelta: 0.1,
+
+  // Spike parameters
+  minSpikes: 0.5,
+  maxSpikes: 10,
+  spikeSmoothing: 0.5,
+  spikeMaxDelta: 0.2,
+
+  // Speed parameters
+  minSpeed: 0.05,
+  maxSpeed: 2,
+  speedSmoothing: 0.5,
+  speedMaxDelta: 0.1,
 
   colorSpeed: 0.02,
   baseSaturation: 0.75,
@@ -40,9 +76,6 @@ const parameters = {
   // Blob offset from the center of the screen.
   blobOffsetX: -180,
   blobOffsetY: -80,
-
-  // Processing parameters
-  processing: 0.6,
 
   gammaFactor: 0.5,
   ambientLightIntensity: 0.5,
@@ -133,20 +166,21 @@ function draw() {
   if (mic) {
     //get the level of amplitude of the mic
     level = mic.getLevel(1);
-    const firstSample = samples.shift();
-    samples.push(level);
-    let newEnvelope = envelope + (level - firstSample) / samples.length;
-    newEnvelope = clamp(
-      newEnvelope,
-      parameters.minEnvelope,
-      parameters.maxEnvelope
-    );
-    envelope = lerp(
-      envelope,
-      newEnvelope,
-      parameters.loudnessSmoothing,
-      parameters.loudnessMaxDelta
-    );
+    const sampleTime = performance.now();
+    do {
+      const firstSample = samples.pop();
+      samples.unshift(level);
+      lastSampleTime += 1000 / 60;
+    } while((sampleTime - lastSampleTime) * 1000 / 60 > 0);
+    lastSampleTime = sampleTime;
+
+    const appliedEnvelope = samples.map((s, i) => envelopeSamples[i] * s);
+    const maxLoudness = Math.max(...appliedEnvelope);
+    const clampedLoudness = clamp(maxLoudness, parameters.minLoudness, parameters.maxLoudness);
+    if(parameters.maxLoudness - parameters.minLoudness < Number.EPSILON)
+      relativeLoudness= 0;
+    else
+      relativeLoudness = (clampedLoudness - parameters.minLoudness) / (parameters.maxLoudness - parameters.minLoudness);
   }
 
   if (debugMode) {
@@ -155,7 +189,7 @@ function draw() {
     fill(255);
     stroke(0);
 
-    circle(300, 100, envelope * parameters.loudnessFactor * 100);
+    circle(300, 100, relativeLoudness * 300);
 
     // Draw the webcam video
     if (video) image(video, 400, 0, (200 * videoWidth) / videoHeight, 200);
@@ -203,18 +237,12 @@ function gotPoses(results) {
     screenspace += width * height;
   }
 
-  let newProximity = clamp(
-    1 - screenspace / (videoWidth * videoHeight),
-    parameters.minProximity,
-    parameters.maxProximity
-  );
-
-  relativeProximity = lerp(
-    relativeProximity,
-    newProximity,
-    parameters.proximitySmoothing,
-    parameters.proximityMaxDelta
-  );
+  const proximityProxy = 1 - screenspace / (videoWidth * videoHeight);
+  let proximity = clamp(proximityProxy, parameters.minProximity, parameters.maxProximity);
+  if( parameters.maxProximity - parameters.minProximity < Number.EPSILON)
+    relativeProximity = 0;
+  else
+    relativeProximity = (proximity - parameters.minProximity) / (parameters.maxProximity - parameters.minProximity);
 }
 
 $(document).ready(function () {
@@ -289,11 +317,16 @@ $(document).ready(function () {
     renderer.gammaFactor = parameters.gammaFactor;
     ambientLight.intensity = parameters.ambientLightIntensity;
 
+    const newSpikes = parameters.minSpikes + relativeLoudness * (parameters.maxSpikes - parameters.minSpikes);
+    spikes = lerp(spikes, newSpikes, parameters.spikeSmoothing, parameters.spikeMaxDelta);
+
+    const newSpeed = parameters.minSpeed + relativeProximity * (parameters.maxSpeed - parameters.minSpeed);
+    speed = lerp(speed, newSpeed, parameters.speedSmoothing, parameters.speedMaxDelta);
+
     const timeDiff = timestamp - lastTimestamp;
     lastTimestamp = timestamp;
 
-    time +=
-      timeDiff * 0.00005 * (1 + relativeProximity * parameters.proximityFactor);
+    time += timeDiff * speed / 1000;
 
     /*
     let hue = (time * parameters.colorSpeed) % 1;
@@ -307,10 +340,6 @@ $(document).ready(function () {
         : baseSat;
     sphere.material.color.setHSL(hue, sat, 0.875);
     */
-
-    let spikes =
-      (0.5 + 1.5 * envelope * parameters.loudnessFactor) *
-      parameters.processing;
 
     const positionAttribute = sphere.geometry.getAttribute('position');
     for (let j = 0; j < positionAttribute.count; j += 1) {
