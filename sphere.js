@@ -1,4 +1,4 @@
-function createUnitSphereBufferGeometry(levels) {
+export function createUnitSphereBufferGeometry(levels) {
     const nonIndexedGeometry = new THREE.IcosahedronBufferGeometry(1, 0);
     const indexedGeometry = toIndexed(nonIndexedGeometry, Math.pow(2, -2));
     const subdividedIndexedGeometry = subdivideIndexed(indexedGeometry, levels);

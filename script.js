@@ -1,3 +1,5 @@
+import {createUnitSphereBufferGeometry} from './sphere.js';
+
 let mic = null;
 let level = 0;
 let relativeLoudness = 0;
@@ -91,7 +93,7 @@ function cc2kc(cc) {
   return cc.replace(/([a-z])([A-Z])/g, (g) => g[0] + "-" + g[1].toLowerCase());
 }
 
-function preload() {
+function preload(p) {
   // Load the bodyPose model
   bodyPose = ml5.bodyPose({
     modelUrl: "./vendor/movenet-tfjs-multipose-lightning-v1/model.json",
@@ -104,7 +106,7 @@ async function listDevices() {
   console.log("Video input devices: ", [...devices]);
 }
 
-async function setupMic(id) {
+async function setupMic(p, id) {
   const mic = new p5.AudioIn();
   const audioDevices = await new Promise(mic.getSources.bind(mic));
   console.log("Audio input devices: ", audioDevices);
@@ -117,7 +119,7 @@ async function setupMic(id) {
   return mic;
 }
 
-async function setupVideo(id) {
+async function setupVideo(p, id) {
   const constraints =
     id !== null && typeof id !== "undefined"
       ? {
@@ -129,17 +131,17 @@ async function setupVideo(id) {
           audio: false
         }
       : { video: true, audio: false };
-  return createCapture(constraints);
+  return p.createCapture(constraints);
 }
 
-async function setupAsync() {
+async function setupAsync(p) {
   const searchParams = new URL(document.location.toString()).searchParams;
 
   await listDevices();
 
-  mic = await setupMic(searchParams.get("audioDeviceId"));
+  mic = await setupMic(p, searchParams.get("audioDeviceId"));
 
-  video = await setupVideo(searchParams.get("videoDeviceId"));
+  video = await setupVideo(p, searchParams.get("videoDeviceId"));
   video.size(videoWidth, videoHeight);
   video.hide();
   video.volume(0); // mute the video's audio
@@ -147,14 +149,14 @@ async function setupAsync() {
   bodyPose.detectStart(video, gotPoses);
 }
 
-function setup() {
-  userStartAudio();
-  createCanvas(canvasWidth, 200);
+function setup(p) {
+  p.userStartAudio();
+  p.createCanvas(canvasWidth, 200);
 
-  setupAsync();
+  setupAsync(p);
 }
 
-function draw() {
+function draw(p) {
   const computedStyle = getComputedStyle(document.documentElement);
   for (let k of Object.keys(parameters)) {
     const cssProperty = `--${cc2kc(k)}`;
@@ -184,15 +186,15 @@ function draw() {
   }
 
   if (debugMode) {
-    background(200);
+    p.background(200);
 
-    fill(255);
-    stroke(0);
+    p.fill(255);
+    p.stroke(0);
 
-    circle(300, 100, relativeLoudness * 300);
+    p.circle(300, 100, relativeLoudness * 300);
 
     // Draw the webcam video
-    if (video) image(video, 400, 0, (200 * videoWidth) / videoHeight, 200);
+    if (video) p.image(video, 400, 0, (200 * videoWidth) / videoHeight, 200);
 
     // Draw all the tracked landmark points
     for (let i = 0; i < poses.length; i++) {
@@ -200,9 +202,9 @@ function draw() {
       for (let j = 0; j < pose.keypoints.length; j++) {
         let keypoint = pose.keypoints[j];
         if (keypoint.confidence < minKeypointConfidence) continue;
-        fill(0, 255, 0);
-        noStroke();
-        circle(
+        p.fill(0, 255, 0);
+        p.noStroke();
+        p.circle(
           400 + ((keypoint.x / videoWidth) * 200 * videoWidth) / videoHeight,
           (keypoint.y / videoHeight) * 200,
           10
@@ -210,19 +212,19 @@ function draw() {
       }
     }
 
-    fill(255);
-    stroke(0);
-    circle(
+    p.fill(255);
+    p.stroke(0);
+    p.circle(
       400 + (200 * videoWidth) / videoHeight + 100,
       100,
       relativeProximity * 100
     );
 
-    fill(0);
-    noStroke();
-    text("Loudness", 200 + 10, 20);
-    text("Bodypose tracking", 400 + 10, 20);
-    text("Proximity", 400 + (200 * videoWidth) / videoHeight + 10, 20);
+    p.fill(0);
+    p.noStroke();
+    p.text("Loudness", 200 + 10, 20);
+    p.text("Bodypose tracking", 400 + 10, 20);
+    p.text("Proximity", 400 + (200 * videoWidth) / videoHeight + 10, 20);
   }
 }
 
@@ -244,6 +246,15 @@ function gotPoses(results) {
   else
     relativeProximity = (proximity - parameters.minProximity) / (parameters.maxProximity - parameters.minProximity);
 }
+
+
+const mainSketch = (p) => {
+  p.preload = () => preload(p);
+  p.setup = () => setup(p);
+  p.draw = () => draw(p);
+}
+
+new p5(mainSketch);
 
 $(document).ready(function () {
   for (let [k, v] of Object.entries(parameters))
