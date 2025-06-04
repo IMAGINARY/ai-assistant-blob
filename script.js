@@ -274,7 +274,10 @@ $(document).ready(function () {
     renderer = new THREE.WebGLRenderer({
       canvas: canvas,
       context: canvas.getContext("webgl2"),
-      antialias: true,
+      powerPreference: "high-performance",
+      antialias: false,
+      stencil: false,
+      depth: false,
       alpha: true,
     }),
     simplex = new SimplexNoise();
@@ -328,7 +331,7 @@ $(document).ready(function () {
   scene.add(sphere);
 
   const gammaCorrectionEffect = new GammaCorrectionEffect({gamma: 1.2});
-  const composer = new EffectComposer(renderer);
+  const composer = new EffectComposer(renderer, {multisampling: 8});
   composer.addPass(new RenderPass(scene, camera));
   composer.addPass(new EffectPass(camera, gammaCorrectionEffect));
 
