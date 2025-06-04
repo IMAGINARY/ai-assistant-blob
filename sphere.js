@@ -1,17 +1,19 @@
+import * as THREE from 'three';
+
 export function createUnitSphereBufferGeometry(levels) {
-    const nonIndexedGeometry = new THREE.IcosahedronBufferGeometry(1, 0);
+    const nonIndexedGeometry = new THREE.IcosahedronGeometry(1, 0);
     const indexedGeometry = toIndexed(nonIndexedGeometry, Math.pow(2, -2));
     const subdividedIndexedGeometry = subdivideIndexed(indexedGeometry, levels);
     return subdividedIndexedGeometry;
 }
 
 function toIndexed(nonIndexedBufferGeometry, eps) {
-    if(nonIndexedBufferGeometry.index !== null)
+    if(nonIndexedBufferGeometry.getIndex() !== null)
         throw new Error("The BufferGeometry must not be indexed.");
 
     const vertices = [];
     const indices = [];
-    const p = nonIndexedBufferGeometry.attributes.position;
+    const p = nonIndexedBufferGeometry.getAttribute('position');
     for( let i = 0; i < p.count; i++) {
         const x = p.getX(i);
         const y = p.getY(i);
@@ -42,7 +44,7 @@ function toIndexed(nonIndexedBufferGeometry, eps) {
 
     const newGeometry = new THREE.BufferGeometry();
     newGeometry.setIndex(indices);
-    newGeometry.addAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    newGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
 
     return newGeometry;
 }
@@ -52,8 +54,9 @@ function subdivideIndexed(indexedGeometry, levels) {
         throw new Error("The BufferGeometry must be indexed.");
 
     // Create buffers large enough to contain the final result
-    const vertices = new Float32Array(indexedGeometry.attributes.position.array.length * (4 ** levels));
-    vertices.set(indexedGeometry.attributes.position.array, 0);
+    const positionAttribute = indexedGeometry.getAttribute('position');
+    const vertices = new Float32Array(positionAttribute.array.length * (4 ** levels));
+    vertices.set(positionAttribute.array, 0);
     let verticesLength = indexedGeometry.attributes.position.array.length;
     const indices = new Int32Array(indexedGeometry.index.array.length * (4 ** levels));
     indices.set(indexedGeometry.index.array, 0);
@@ -72,7 +75,7 @@ function subdivideIndexed(indexedGeometry, levels) {
 
     const newIndexedGeometry = new THREE.BufferGeometry();
     newIndexedGeometry.setIndex([...indices.subarray(0, indicesLength)]);
-    newIndexedGeometry.addAttribute('position', new THREE.Float32BufferAttribute(vertices.subarray(0, verticesLength), 3));
+    newIndexedGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices.subarray(0, verticesLength), 3));
 
     return newIndexedGeometry;
 }

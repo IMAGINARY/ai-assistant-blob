@@ -1,3 +1,6 @@
+import * as THREE from 'three';
+import { EffectComposer, EffectPass, RenderPass } from "postprocessing";
+import { GammaCorrectionEffect } from "./GammaCorrectionEffect.js";
 import {createUnitSphereBufferGeometry} from './sphere.js';
 
 let mic = null;
@@ -79,7 +82,7 @@ const parameters = {
   blobOffsetX: -180,
   blobOffsetY: -80,
 
-  gammaFactor: 0.5,
+  gammaFactor: 1.1,
   ambientLightIntensity: 0.5,
 };
 
@@ -279,8 +282,6 @@ $(document).ready(function () {
   renderer.setSize(canvasWidth, canvasHeight);
   renderer.setPixelRatio(window.devicePixelRatio || 1);
 
-  renderer.gammaOutput = true;
-
   let scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(
     45,
@@ -294,10 +295,15 @@ $(document).ready(function () {
   // Create high resolution sphere geometry
   const levels = 7;
   const sphereGeometry = createUnitSphereBufferGeometry(levels);
+  sphereGeometry.getAttribute('position').setUsage(THREE.StreamDrawUsage);
+  sphereGeometry.computeVertexNormals();
+  sphereGeometry.getAttribute('normal').setUsage(THREE.StreamDrawUsage);
+
   const clonedVertices = new Float32Array(sphereGeometry.attributes.position.array);
 
   let material = new THREE.MeshPhongMaterial({
     color: 0xffe0d4,
+    specular: 0xffffff,
     shininess: 100,
   });
 
@@ -321,11 +327,16 @@ $(document).ready(function () {
 
   scene.add(sphere);
 
+  const gammaCorrectionEffect = new GammaCorrectionEffect({gamma: 1.2});
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  composer.addPass(new EffectPass(camera, gammaCorrectionEffect));
+
   let time = 0;
   let lastTimestamp;
 
   let update = (timestamp) => {
-    renderer.gammaFactor = parameters.gammaFactor;
+    gammaCorrectionEffect.gamma = parameters.gammaFactor;
     ambientLight.intensity = parameters.ambientLightIntensity;
 
     const newSpikes = parameters.minSpikes + relativeLoudness * (parameters.maxSpikes - parameters.minSpikes);
@@ -375,7 +386,7 @@ $(document).ready(function () {
 
   function animate(timestamp) {
     update(timestamp);
-    renderer.render(scene, camera);
+    composer.render(scene, camera);
     requestAnimationFrame(animate);
   }
 
