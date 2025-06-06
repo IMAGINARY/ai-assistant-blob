@@ -1,3 +1,5 @@
+import GUI from 'lil-gui';
+import createParametersWithGUI from './parameters.js';
 import {ready} from "./ready.js";
 import {Blob} from "./blob.js";
 
@@ -49,39 +51,7 @@ let poses = [];
 
 const minKeypointConfidence = 0.25;
 
-const parameters = {
-  // Sound parameters
-  minLoudness: 0.002,
-  maxLoudness: 0.4,
-
-  // Proximity parameters
-  minProximity: 0.1,
-  maxProximity: 1,
-
-  // Spike parameters
-  spikeRatio: 0.3,
-  minSpikes: 0.5,
-  maxSpikes: 10,
-  spikeSmoothing: 0.5,
-  spikeMaxDelta: 0.2,
-
-  // Speed parameters
-  minSpeed: 0.05,
-  maxSpeed: 2,
-  speedSmoothing: 0.5,
-  speedMaxDelta: 0.1,
-
-  colorSpeed: 0.02,
-  baseSaturation: 0.75,
-
-  blobSize: 1.3,
-  // Blob offset from the center of the screen.
-  blobOffsetX: -180,
-  blobOffsetY: -80,
-
-  gammaFactor: 1.1,
-  ambientLightIntensity: 0.5,
-};
+const {parameters, buildParameterGUI} = createParametersWithGUI();
 
 function kc2cc(kc) {
   // Convert kebab case to camel case
@@ -154,7 +124,7 @@ function setup(p) {
 
   const p5DebugCanvas = p.createCanvas(canvasWidth / 3, canvasHeight / 3);
 
-  const devPanel = document.querySelector(".dev-panel");
+  const devPanel = document.querySelector("#dev-canvas");
   p5DebugCanvas.parent(devPanel);
 
   setupAsync(p);
@@ -168,19 +138,16 @@ function draw(p) {
 }
 
 function updateInputs() {
-  updateParametersFromCss();
+  updateCss();
   updateLoudness();
   updateProximity();
 }
 
-function updateParametersFromCss() {
-  const computedStyle = getComputedStyle(document.documentElement);
-  for (let k of Object.keys(parameters)) {
-    const cssProperty = `--${cc2kc(k)}`;
-    const cssValue = computedStyle.getPropertyValue(cssProperty);
-    const v = Number.parseFloat(cssValue);
-    parameters[k] = v;
-  }
+function updateCss() {
+  document.documentElement.style.setProperty(`--blob-offset-x`, parameters.blob.offsetX);
+  document.documentElement.style.setProperty(`--blob-offset-y`, parameters.blob.offsetY);
+  document.documentElement.style.setProperty(`--background-color`, parameters.scene.background);
+
 }
 
 function updateLoudness() {
@@ -196,11 +163,11 @@ function updateLoudness() {
 
   const appliedEnvelope = samples.map((s, i) => envelopeSamples[i] * s);
   const maxLoudness = Math.max(...appliedEnvelope);
-  const clampedLoudness = clamp(maxLoudness, parameters.minLoudness, parameters.maxLoudness);
-  if(parameters.maxLoudness - parameters.minLoudness < Number.EPSILON)
+  const clampedLoudness = clamp(maxLoudness, parameters.loudness.min, parameters.loudness.max);
+  if(parameters.loudness.max - parameters.loudness.min < Number.EPSILON)
     relativeLoudness= 0;
   else
-    relativeLoudness = (clampedLoudness - parameters.minLoudness) / (parameters.maxLoudness - parameters.minLoudness);
+    relativeLoudness = (clampedLoudness - parameters.loudness.min) / (parameters.loudness.max - parameters.loudness.min);
 }
 
 function updateProximity() {
@@ -211,11 +178,11 @@ function updateProximity() {
   }
 
   const proximityProxy = 1 - screenspace / (videoWidth * videoHeight);
-  let proximity = clamp(proximityProxy, parameters.minProximity, parameters.maxProximity);
-  if( parameters.maxProximity - parameters.minProximity < Number.EPSILON)
+  let proximity = clamp(proximityProxy, parameters.proximity.min, parameters.proximity.max);
+  if( parameters.proximity.max - parameters.proximity.min < Number.EPSILON)
     relativeProximity = 0;
   else
-    relativeProximity = (proximity - parameters.minProximity) / (parameters.maxProximity - parameters.minProximity);
+    relativeProximity = (proximity - parameters.proximity.min) / (parameters.proximity.max - parameters.proximity.min);
 }
 
 function drawDebugPanel(p) {
@@ -275,8 +242,12 @@ const mainSketch = (p) => {
 new p5(mainSketch);
 
 ready().then(function () {
-  for (let [k, v] of Object.entries(parameters))
-    document.documentElement.style.setProperty(`--${cc2kc(k)}`, v);
+  const gui = new GUI({ container: document.querySelector('#dev-control-panel') });
+  const guiTools = {
+    "Log to console": () => console.log(parameters),
+  }
+  gui.add(guiTools, "Log to console");
+  buildParameterGUI(gui);
 
   window.addEventListener("keydown", (e) => {
     if (e.key === "d") {
@@ -286,29 +257,35 @@ ready().then(function () {
   if(!new URLSearchParams(window.location.search).has("dev"))
     toggleDevMode();
 
-  const canvas = document.querySelector('.blob');
+  const canvas = document.querySelector('#blob');
   canvas.width = canvasWidth;
   canvas.height = canvasHeight;
 
   const detail = 7;
   const blob = new Blob(canvas, detail);
-  let spikes = parameters.minSpikes;
-  let speed = parameters.minSpeed;
+  let spikes = parameters.spikes.min;
+  let speed = parameters.speed.min;
 
   function animate(timestamp) {
-    const newSpikes = parameters.minSpikes + relativeLoudness * (parameters.maxSpikes - parameters.minSpikes);
-    spikes = lerp(spikes, newSpikes, parameters.spikeSmoothing, parameters.spikeMaxDelta);
+    const newSpikes = parameters.spikes.min + relativeLoudness * (parameters.spikes.max - parameters.spikes.min);
+    spikes = lerp(spikes, newSpikes, parameters.spikes.smoothing, parameters.spikes.maxDelta);
+    spikes = {computed: spikes, min: parameters.spikes.min, max: parameters.spikes.max}[parameters.spikes.use];
 
-    const newSpeed = parameters.minSpeed + relativeProximity * (parameters.maxSpeed - parameters.minSpeed);
-    speed = lerp(speed, newSpeed, parameters.speedSmoothing, parameters.speedMaxDelta);
+    const newSpeed = parameters.speed.min + relativeProximity * (parameters.speed.max - parameters.speed.min);
+    speed = lerp(speed, newSpeed, parameters.speed.smoothing, parameters.speed.maxDelta);
+    speed = {computed: speed, min: parameters.speed.min, max: parameters.speed.max}[parameters.speed.use];
 
     const blobParameters = {
-        blobSize: parameters.blobSize,
-        spikes: spikes,
-        spikeRatio: parameters.spikeRatio,
-        speed: speed,
-        gammaFactor: parameters.gammaFactor,
-        ambientLightIntensity: parameters.ambientLightIntensity,
+      detail: parameters.blob.detail,
+      blobSize: parameters.blob.size,
+      spikes: spikes,
+      spikeRatio: parameters.spikes.ratio,
+      speed: speed,
+      gammaFactor: parameters.scene.gamma,
+      blobMaterial: {...parameters.blobMaterial},
+      ambientLight: {...parameters.ambientLight},
+      directionalLight1: {...parameters.directionalLight1},
+      directionalLight2: {...parameters.directionalLight2},
     }
     blob.animate(timestamp, blobParameters);
     requestAnimationFrame(animate);
@@ -318,12 +295,12 @@ ready().then(function () {
 });
 
 function isDevMode() {
-  const devPanel = document.querySelector(".dev-panel");
+  const devPanel = document.querySelector("#dev-panel");
   return !devPanel.classList.contains("hidden");
 }
 
 function toggleDevMode() {
-  const devPanel = document.querySelector(".dev-panel");
+  const devPanel = document.querySelector("#dev-panel");
   if(!isDevMode())
       devPanel.classList.remove("hidden");
   else

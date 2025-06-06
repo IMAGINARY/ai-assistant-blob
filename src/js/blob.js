@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { EffectComposer, EffectPass, RenderPass } from "postprocessing";
 import { GammaCorrectionEffect } from "./GammaCorrectionEffect.js";
 import { createUnitSphereBufferGeometry } from "./sphere.js";
-import { createNoise3D } from 'simplex-noise';
+import { createNoise3D } from "simplex-noise";
 
 export class Blob {
   constructor(canvas, detail = 5) {
@@ -15,6 +15,8 @@ export class Blob {
       depth: false,
       alpha: true,
     });
+
+    this.detail = detail;
 
     this.noise3D = createNoise3D();
 
@@ -32,37 +34,31 @@ export class Blob {
     camera.position.z = 5;
 
     // Create high resolution sphere geometry
-    this.sphereGeometry = createUnitSphereBufferGeometry(detail);
-    this.sphereGeometry
-      .getAttribute("position")
-      .setUsage(THREE.StreamDrawUsage);
-    this.sphereGeometry.computeVertexNormals();
-    this.sphereGeometry.getAttribute("normal").setUsage(THREE.StreamDrawUsage);
-
+    this.sphereGeometry = Blob.createSphereGeometry(detail);
     this.clonedVertices = new Float32Array(
       this.sphereGeometry.attributes.position.array,
     );
 
-    const material = new THREE.MeshPhongMaterial({
+    this.material = new THREE.MeshPhongMaterial({
       color: 0xffe0d4,
       specular: 0xffffff,
       shininess: 100,
     });
 
-    const lightTop = new THREE.DirectionalLight(0xffffff, 0.7);
-    lightTop.position.set(0, 500, 200);
-    lightTop.castShadow = true;
-    scene.add(lightTop);
+    this.directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.7);
+    this.directionalLight1.position.set(0, 500, 200);
+    this.directionalLight1.castShadow = true;
+    scene.add(this.directionalLight1);
 
-    const lightBottom = new THREE.DirectionalLight(0xffffff, 0.25);
-    lightBottom.position.set(0, -500, 400);
-    lightBottom.castShadow = true;
-    scene.add(lightBottom);
+    this.directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.25);
+    this.directionalLight2.position.set(0, -500, 400);
+    this.directionalLight2.castShadow = true;
+    scene.add(this.directionalLight2);
 
     this.ambientLight = new THREE.AmbientLight(0xffffff, 1);
     scene.add(this.ambientLight);
 
-    this.sphere = new THREE.Mesh(this.sphereGeometry, material);
+    this.sphere = new THREE.Mesh(this.sphereGeometry, this.material);
     scene.add(this.sphere);
 
     this.gammaCorrectionEffect = new GammaCorrectionEffect({ gamma: 1.2 });
@@ -76,9 +72,18 @@ export class Blob {
     this.lastTimestamp = -1;
   }
 
+  static createSphereGeometry(detail) {
+    const sphereGeometry = createUnitSphereBufferGeometry(detail);
+    sphereGeometry.getAttribute("position").setUsage(THREE.StreamDrawUsage);
+    sphereGeometry.computeVertexNormals();
+    sphereGeometry.getAttribute("normal").setUsage(THREE.StreamDrawUsage);
+
+    return sphereGeometry;
+  }
+
   updateGeometry(spikeRatio, factor, offset) {
     const v = this.clonedVertices;
-    const positionAttribute = this.sphereGeometry.getAttribute("position");
+    const positionAttribute = this.sphere.geometry.getAttribute("position");
     for (let j = 0; j < positionAttribute.count; j += 1) {
       const i = j * 3;
       let x = v[i + 0];
@@ -95,22 +100,67 @@ export class Blob {
       positionAttribute.setXYZ(j, x * newLength, y * newLength, z * newLength);
     }
     positionAttribute.needsUpdate = true;
-    this.sphereGeometry.computeVertexNormals();
-    this.sphereGeometry.vertexNormalsNeedUpdate = true;
+    this.sphere.geometry.computeVertexNormals();
+    this.sphere.geometry.vertexNormalsNeedUpdate = true;
   }
 
   animate(
     timestamp,
-    { blobSize, spikeRatio, spikes, speed, gammaFactor, ambientLightIntensity },
+    {
+      detail,
+      blobSize,
+      spikeRatio,
+      spikes,
+      speed,
+      gammaFactor,
+      blobMaterial,
+      ambientLight,
+      directionalLight1,
+      directionalLight2,
+    },
   ) {
     this.gammaCorrectionEffect.gamma = gammaFactor;
-    this.ambientLight.intensity = ambientLightIntensity;
+
+    this.ambientLight.intensity = ambientLight.intensity;
+    this.ambientLight.color.set(ambientLight.color);
+
+    this.directionalLight1.intensity = directionalLight1.intensity;
+    this.directionalLight1.color.set(directionalLight1.color);
+    this.directionalLight1.position.set(
+      directionalLight1.positionX,
+      directionalLight1.positionY,
+      directionalLight1.positionZ,
+    );
+
+    this.directionalLight2.intensity = directionalLight2.intensity;
+    this.directionalLight2.color.set(directionalLight2.color);
+    this.directionalLight2.position.set(
+      directionalLight2.positionX,
+      directionalLight2.positionY,
+      directionalLight2.positionZ,
+    );
+
     this.sphere.scale.set(blobSize, blobSize, blobSize);
+
+    this.material.color.set(blobMaterial.color);
+    this.material.emissive.set(blobMaterial.emissive);
+    this.material.specular.set(blobMaterial.specular);
+    this.material.shininess = blobMaterial.shininess;
+    this.material.wireframe = blobMaterial.wireframe;
 
     const timeDiff =
       this.lastTimestamp === -1 ? 0 : timestamp - this.lastTimestamp;
     this.lastTimestamp = timestamp;
     this.time += (timeDiff * speed) / 1000;
+
+    if (this.detail !== detail) {
+      this.sphereGeometry = Blob.createSphereGeometry(detail);
+      this.clonedVertices = new Float32Array(
+        this.sphereGeometry.attributes.position.array,
+      );
+      this.sphere.geometry.dispose();
+      this.sphere.geometry = this.sphereGeometry;
+    }
 
     this.updateGeometry(spikeRatio, spikes, this.time);
     this.render();
