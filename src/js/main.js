@@ -282,6 +282,8 @@ $(document).ready(function () {
       toggleDevMode();
     }
   });
+  if(!new URLSearchParams(window.location.search).has("dev"))
+    toggleDevMode();
 
   const canvas = document.querySelector('.blob');
   canvas.width = canvasWidth;
