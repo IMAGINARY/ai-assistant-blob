@@ -37,6 +37,9 @@ let lastSampleTime = performance.now();
 const canvasWidth = 3840;
 const canvasHeight = 2160;
 
+const debugPanelWidth = canvasWidth / 3;
+const debugPanelHeight = canvasHeight / 3;
+
 let video = null;
 const videoWidth = 640;
 const videoHeight = 480;
@@ -149,7 +152,7 @@ async function setupAsync(p) {
 
 function setup(p) {
   p.userStartAudio();
-  p.createCanvas(canvasWidth, 200);
+  p.createCanvas(canvasWidth / 3, canvasHeight / 3);
 
   setupAsync(p);
 }
@@ -192,21 +195,27 @@ function draw(p) {
     p.circle(300, 100, relativeLoudness * 300);
 
     // Draw the webcam video
-    if (video) p.image(video, 400, 0, (200 * videoWidth) / videoHeight, 200);
+    const debugVideoTop = debugPanelHeight / 3;
+    const debugVideoLeft = 0;
+    const debugVideoWidth = 2 * debugPanelWidth / 3;
+    const debugVideoHeight =  (debugVideoWidth * videoHeight) / videoWidth;
+    if (video) {
+      p.image(video, debugVideoLeft, debugVideoTop, debugVideoWidth, debugVideoHeight);
 
-    // Draw all the tracked landmark points
-    for (let i = 0; i < poses.length; i++) {
-      let pose = poses[i];
-      for (let j = 0; j < pose.keypoints.length; j++) {
-        let keypoint = pose.keypoints[j];
-        if (keypoint.confidence < minKeypointConfidence) continue;
-        p.fill(0, 255, 0);
-        p.noStroke();
-        p.circle(
-          400 + ((keypoint.x / videoWidth) * 200 * videoWidth) / videoHeight,
-          (keypoint.y / videoHeight) * 200,
-          10
-        );
+      // Draw all the tracked landmark points
+      for (let i = 0; i < poses.length; i++) {
+        let pose = poses[i];
+        for (let j = 0; j < pose.keypoints.length; j++) {
+          let keypoint = pose.keypoints[j];
+          if (keypoint.confidence < minKeypointConfidence) continue;
+          p.fill(255, 255, 0);
+          p.stroke(0, 0, 0);
+          p.circle(
+              debugVideoLeft + (keypoint.x / videoWidth) * debugVideoWidth,
+              debugVideoTop + (keypoint.y / videoHeight) * debugVideoHeight,
+            20
+          );
+        }
       }
     }
 
@@ -221,7 +230,7 @@ function draw(p) {
     p.fill(0);
     p.noStroke();
     p.text("Loudness", 200 + 10, 20);
-    p.text("Bodypose tracking", 400 + 10, 20);
+    p.text("Bodypose tracking", debugVideoLeft + 10, debugVideoTop + 20);
     p.text("Proximity", 400 + (200 * videoWidth) / videoHeight + 10, 20);
   }
 }
