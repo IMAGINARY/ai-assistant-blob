@@ -1,15 +1,9 @@
-import * as THREE from 'three';
-import { EffectComposer, EffectPass, RenderPass } from "postprocessing";
-import { GammaCorrectionEffect } from "./GammaCorrectionEffect.js";
-import {createUnitSphereBufferGeometry} from './sphere.js';
+import {Blob} from "./blob.js";
 
 let mic = null;
 let level = 0;
 let relativeLoudness = 0;
 let relativeProximity = 0;
-
-let spikes = 0;
-let speed = 0;
 
 let attackTime = 0.2; // Attack time in seconds
 let decayTime = 1; // Decay time in seconds
@@ -63,6 +57,7 @@ const parameters = {
   maxProximity: 1,
 
   // Spike parameters
+  spikeRatio: 0.3,
   minSpikes: 0.5,
   maxSpikes: 10,
   spikeSmoothing: 0.5,
@@ -77,7 +72,7 @@ const parameters = {
   colorSpeed: 0.02,
   baseSaturation: 0.75,
 
-  blobBaseRadius: 1,
+  blobSize: 1.3,
   // Blob offset from the center of the screen.
   blobOffsetX: -180,
   blobOffsetY: -80,
@@ -250,7 +245,6 @@ function gotPoses(results) {
     relativeProximity = (proximity - parameters.minProximity) / (parameters.maxProximity - parameters.minProximity);
 }
 
-
 const mainSketch = (p) => {
   p.preload = () => preload(p);
   p.setup = () => setup(p);
@@ -269,131 +263,34 @@ $(document).ready(function () {
     }
   });
 
-  let $canvas = $(".blob"),
-    canvas = $canvas[0],
-    renderer = new THREE.WebGLRenderer({
-      canvas: canvas,
-      context: canvas.getContext("webgl2"),
-      powerPreference: "high-performance",
-      antialias: false,
-      stencil: false,
-      depth: false,
-      alpha: true,
-    }),
-    simplex = new SimplexNoise();
+  const canvas = document.querySelector('.blob');
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
 
-  renderer.setSize(canvasWidth, canvasHeight);
-  renderer.setPixelRatio(window.devicePixelRatio || 1);
+  const detail = 7;
+  const blob = new Blob(canvas, detail);
+  let spikes = parameters.minSpikes;
+  let speed = parameters.minSpeed;
 
-  let scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(
-    45,
-    canvasWidth / canvasHeight,
-    0.1,
-    1000
-  );
-
-  camera.position.z = 5;
-
-  // Create high resolution sphere geometry
-  const levels = 7;
-  const sphereGeometry = createUnitSphereBufferGeometry(levels);
-  sphereGeometry.getAttribute('position').setUsage(THREE.StreamDrawUsage);
-  sphereGeometry.computeVertexNormals();
-  sphereGeometry.getAttribute('normal').setUsage(THREE.StreamDrawUsage);
-
-  const clonedVertices = new Float32Array(sphereGeometry.attributes.position.array);
-
-  let material = new THREE.MeshPhongMaterial({
-    color: 0xffe0d4,
-    specular: 0xffffff,
-    shininess: 100,
-  });
-
-  let lightTop = new THREE.DirectionalLight(0xffffff, 0.7);
-  lightTop.position.set(0, 500, 200);
-  lightTop.castShadow = true;
-  scene.add(lightTop);
-
-  let lightBottom = new THREE.DirectionalLight(0xffffff, 0.25);
-  lightBottom.position.set(0, -500, 400);
-  lightBottom.castShadow = true;
-  scene.add(lightBottom);
-
-  let ambientLight = new THREE.AmbientLight(
-    0xffffff,
-    parameters.ambientLightIntensity
-  );
-  scene.add(ambientLight);
-
-  let sphere = new THREE.Mesh(sphereGeometry, material);
-
-  scene.add(sphere);
-
-  const gammaCorrectionEffect = new GammaCorrectionEffect({gamma: 1.2});
-  const composer = new EffectComposer(renderer, {multisampling: 8});
-  composer.addPass(new RenderPass(scene, camera));
-  composer.addPass(new EffectPass(camera, gammaCorrectionEffect));
-
-  let time = 0;
-  let lastTimestamp;
-
-  let update = (timestamp) => {
-    gammaCorrectionEffect.gamma = parameters.gammaFactor;
-    ambientLight.intensity = parameters.ambientLightIntensity;
-
+  function animate(timestamp) {
     const newSpikes = parameters.minSpikes + relativeLoudness * (parameters.maxSpikes - parameters.minSpikes);
     spikes = lerp(spikes, newSpikes, parameters.spikeSmoothing, parameters.spikeMaxDelta);
 
     const newSpeed = parameters.minSpeed + relativeProximity * (parameters.maxSpeed - parameters.minSpeed);
     speed = lerp(speed, newSpeed, parameters.speedSmoothing, parameters.speedMaxDelta);
 
-    const timeDiff = timestamp - lastTimestamp;
-    lastTimestamp = timestamp;
-
-    time += timeDiff * speed / 1000;
-
-    /*
-    let hue = (time * parameters.colorSpeed) % 1;
-    // Desaturate the area starting around purple to match the color scheme
-    const baseSat = parameters.baseSaturation;
-    let desatStart = 5 / 8;
-    let sat =
-      hue > desatStart
-        ? baseSat *
-          (1 - Math.min(1 - hue, hue - desatStart) / ((1 - desatStart) / 2))
-        : baseSat;
-    sphere.material.color.setHSL(hue, sat, 0.875);
-    */
-
-    const positionAttribute = sphere.geometry.getAttribute('position');
-    for (let j = 0; j < positionAttribute.count; j += 1) {
-      const i = j * 3;
-      let x = clonedVertices[i + 0];
-      let y = clonedVertices[i + 1];
-      let z = clonedVertices[i + 2];
-
-      const simplexNoise = simplex.noise3D(
-          x * spikes + time,
-          y * spikes + time,
-          z * spikes + time
-      );
-
-      const newLength = parameters.blobBaseRadius + 0.3 * simplexNoise;
-      positionAttribute.setXYZ(j, x * newLength, y * newLength, z * newLength,);
+    const blobParameters = {
+        blobSize: parameters.blobSize,
+        spikes: spikes,
+        spikeRatio: parameters.spikeRatio,
+        speed: speed,
+        gammaFactor: parameters.gammaFactor,
+        ambientLightIntensity: parameters.ambientLightIntensity,
     }
-    positionAttribute.needsUpdate = true;
-    sphere.geometry.computeVertexNormals();
-    sphere.geometry.vertexNormalsNeedUpdate = true;
-  };
-
-  function animate(timestamp) {
-    update(timestamp);
-    composer.render(scene, camera);
+    blob.animate(timestamp, blobParameters);
     requestAnimationFrame(animate);
   }
 
-  lastTimestamp = document.timeline.currentTime;
   requestAnimationFrame(animate);
 });
 
