@@ -152,7 +152,12 @@ async function setupAsync(p) {
 
 function setup(p) {
   p.userStartAudio();
-  p.createCanvas(canvasWidth / 3, canvasHeight / 3);
+
+  const {canvas: debugCanvas} = p.createCanvas(canvasWidth / 3, canvasHeight / 3);
+  console.log(debugCanvas);
+
+  const debugPanel = document.querySelector(".debug-panel");
+  debugPanel.appendChild(debugCanvas);
 
   setupAsync(p);
 }
@@ -277,7 +282,7 @@ $(document).ready(function () {
 
   $(document).on("keydown", (e) => {
     if (e.key === "d") {
-      toggleControls();
+      toggleDebugPanel();
     }
   });
 
@@ -312,17 +317,12 @@ $(document).ready(function () {
   requestAnimationFrame(animate);
 });
 
-function toggleControls() {
-  if (debugMode) {
-    $(".controls").css("visibility", "hidden");
-    $(".p5Canvas").css("visibility", "hidden");
-    $("#app").css("border", "none");
-  } else {
-    $(".controls").css("visibility", "visible");
-    $(".p5Canvas").css("visibility", "visible");
-    $("#app").css("border", "1px solid red");
-  }
-  debugMode = !debugMode;
+function toggleDebugPanel() {
+  const debugPanel = document.querySelector(".debug-panel");
+  if(debugPanel.classList.contains("hidden"))
+      debugPanel.classList.remove("hidden");
+  else
+      debugPanel.classList.add("hidden");
 }
 
 function clamp(value, min, max) {
