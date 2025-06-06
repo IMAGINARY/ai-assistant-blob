@@ -8,6 +8,7 @@
       {
         "imports": {
           "postprocessing": "./vendor/postprocessing@6.37.3/index.js",
+          "simplex-noise": "./vendor/simplex-noise@4.0.3/simplex-noise.js",
           "three": "./vendor/three@v0.177.0/three.module.js",
           "three/addons/": "./vendor/three@v0.177.0/examples/jsm/"
         }
@@ -18,15 +19,15 @@
     <!-- partial:index.partial.html -->
     <main id="app">
       <canvas class="blob"></canvas>
-      <div class="debug-panel"></div>
+      <div class="debug-panel">
+      </div>
     </main>
 
     <!-- partial -->
     <script src="vendor/jquery-3.4.1.min.js"></script>
-    <script src="vendor/simplex-noise.min.js"></script>
-    <script src="vendor/p5.min.js"></script>
-    <script src="vendor/p5.sound.min.js"></script>
-    <script src="vendor/ml5.min.js"></script>
+    <script src="vendor/p5@1.11.5/p5.min.js"></script>
+    <script src="vendor/p5.sound@1.0.1/p5.sound.min.js"></script>
+    <script src="vendor/ml5@1.2.1/ml5.min.js"></script>
     <script src="src/js/main.js" type="module"></script>
   </body>
 </html>

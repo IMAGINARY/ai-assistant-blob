@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { EffectComposer, EffectPass, RenderPass } from "postprocessing";
 import { GammaCorrectionEffect } from "./GammaCorrectionEffect.js";
 import { createUnitSphereBufferGeometry } from "./sphere.js";
+import { createNoise3D } from 'simplex-noise';
 
 export class Blob {
   constructor(canvas, detail = 5) {
@@ -15,7 +16,7 @@ export class Blob {
       alpha: true,
     });
 
-    this.simplex = new SimplexNoise();
+    this.noise3D = createNoise3D();
 
     renderer.setSize(canvas.width, canvas.height);
     renderer.setPixelRatio(window.devicePixelRatio || 1);
@@ -84,7 +85,7 @@ export class Blob {
       let y = v[i + 1];
       let z = v[i + 2];
 
-      const simplexNoise = this.simplex.noise3D(
+      const simplexNoise = this.noise3D(
         x * factor + offset,
         y * factor + offset,
         z * factor + offset,
