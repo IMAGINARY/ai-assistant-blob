@@ -18,7 +18,7 @@ html {
   transform: translate(calc(1px * var(--blob-offset-x)), calc(1px * var(--blob-offset-y)));
 }
 
-.debug-panel {
+.dev-panel {
   position: absolute;
   right: 0;
   bottom: 0;

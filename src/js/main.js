@@ -48,8 +48,6 @@ let poses = [];
 
 const minKeypointConfidence = 0.25;
 
-let debugMode = false;
-
 const parameters = {
   // Sound parameters
   minLoudness: 0.002,
@@ -153,11 +151,10 @@ async function setupAsync(p) {
 function setup(p) {
   p.userStartAudio();
 
-  const {canvas: debugCanvas} = p.createCanvas(canvasWidth / 3, canvasHeight / 3);
-  console.log(debugCanvas);
+  const p5DebugCanvas = p.createCanvas(canvasWidth / 3, canvasHeight / 3);
 
-  const debugPanel = document.querySelector(".debug-panel");
-  debugPanel.appendChild(debugCanvas);
+  const devPanel = document.querySelector(".dev-panel");
+  p5DebugCanvas.parent(devPanel);
 
   setupAsync(p);
 }
@@ -165,7 +162,7 @@ function setup(p) {
 function draw(p) {
   updateInputs();
 
-  if (debugMode)
+  if (isDevMode())
     drawDebugPanel(p);
 }
 
@@ -282,7 +279,7 @@ $(document).ready(function () {
 
   $(document).on("keydown", (e) => {
     if (e.key === "d") {
-      toggleDebugPanel();
+      toggleDevMode();
     }
   });
 
@@ -317,12 +314,17 @@ $(document).ready(function () {
   requestAnimationFrame(animate);
 });
 
-function toggleDebugPanel() {
-  const debugPanel = document.querySelector(".debug-panel");
-  if(debugPanel.classList.contains("hidden"))
-      debugPanel.classList.remove("hidden");
+function isDevMode() {
+  const devPanel = document.querySelector(".dev-panel");
+  return !devPanel.classList.contains("hidden");
+}
+
+function toggleDevMode() {
+  const devPanel = document.querySelector(".dev-panel");
+  if(!isDevMode())
+      devPanel.classList.remove("hidden");
   else
-      debugPanel.classList.add("hidden");
+      devPanel.classList.add("hidden");
 }
 
 function clamp(value, min, max) {
