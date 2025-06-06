@@ -1,3 +1,4 @@
+
 function boolean(value) {
   return {
     value,
@@ -28,8 +29,8 @@ function choice(value, choices) {
 
 const parametersWithGUI = {
   loudness: {
-    min: number(0.002, 0, 1, 0.001),
-    max: number(0.04, 0, 1, 0.001),
+    min: number(0.01, 0, 1, 0.001),
+    max: number(0.05, 0, 1, 0.001),
   },
 
   proximity: {
@@ -39,7 +40,7 @@ const parametersWithGUI = {
 
   spikes: {
     ratio: number(0.3, 0, 1, 0.001),
-    min: number(0.5, 0, 100, 0.01),
+    min: number(0.2, 0, 100, 0.01),
     max: number(10, 0, 100, 0.01),
     smoothing: number(0.5, 0, 1, 0.001),
     maxDelta: number(0.2, 0, 10, 0.01),
@@ -47,8 +48,8 @@ const parametersWithGUI = {
   },
 
   speed: {
-    min: number(0.05, 0, 100, 0.01),
-    max: number(2, 0, 100, 0.01),
+    min: number(0.02, 0, 100, 0.01),
+    max: number(0.2, 0, 100, 0.01),
     smoothing: number(0.5, 0, 1, 0.001),
     maxDelta: number(0.1, 0, 10, 0.01),
     use: choice("computed", ["computed", "min", "max"]),
@@ -62,16 +63,17 @@ const parametersWithGUI = {
   },
 
   blobMaterial: {
-    color: color("#ffe0d4"),
+    color: color("#ffd09c"),
     emissive: color("#000000"),
     specular: color("#ffffff"),
-    shininess: number(100, 0, 100, 0.1),
+    shininess: number(25, 0, 100, 0.1),
     wireframe: boolean(false),
   },
 
   scene: {
     gamma: number(1.1, 0, 10, 0.01),
     background: color("#000000"),
+    shadows: boolean(false),
   },
 
   ambientLight: {
@@ -83,16 +85,20 @@ const parametersWithGUI = {
     color: color("#ffffff"),
     intensity: number(0.7, 0, 1, 0.001),
     positionX: number(0, -1000, 1000, 1),
-    positionY: number(500, -1000, 1000, 1),
-    positionZ: number(200, -1000, 1000, 1),
+    positionY: number(10, -1000, 1000, 1),
+    positionZ: number(4, -1000, 1000, 1),
+    bias: number(0, -1, 1, 0.001),
+    normalBias: number(0.015, -1, 1, 0.001),
   },
 
   directionalLight2: {
     color: color("#ffffff"),
     intensity: number(0.25, 0, 1, 0.001),
     positionX: number(0, -1000, 1000, 1),
-    positionY: number(-500, -1000, 1000, 1),
-    positionZ: number(400, -1000, 1000, 1),
+    positionY: number(-5, -1000, 1000, 1),
+    positionZ: number(4, -1000, 1000, 1),
+    bias: number(0.015, -1, 1, 0.001),
+    normalBias: number(0, -1, 1, 0.001),
   },
 };
 
