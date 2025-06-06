@@ -6,7 +6,7 @@ import { createNoise3D } from "simplex-noise";
 
 export class Blob {
   constructor(canvas, detail = 5) {
-    const renderer = new THREE.WebGLRenderer({
+    this.renderer = new THREE.WebGLRenderer({
       canvas: canvas,
       context: canvas.getContext("webgl2"),
       powerPreference: "high-performance",
@@ -20,8 +20,8 @@ export class Blob {
 
     this.noise3D = createNoise3D();
 
-    renderer.setSize(canvas.width, canvas.height);
-    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    this.renderer.setSize(canvas.width, canvas.height);
+    this.renderer.setPixelRatio(window.devicePixelRatio || 1);
 
     let scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
@@ -45,13 +45,11 @@ export class Blob {
       shininess: 100,
     });
 
-    this.directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.7);
-    this.directionalLight1.position.set(0, 500, 200);
+    this.directionalLight1 = new THREE.DirectionalLight();
     this.directionalLight1.castShadow = true;
     scene.add(this.directionalLight1);
 
-    this.directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.25);
-    this.directionalLight2.position.set(0, -500, 400);
+    this.directionalLight2 = new THREE.DirectionalLight();
     this.directionalLight2.castShadow = true;
     scene.add(this.directionalLight2);
 
@@ -59,10 +57,12 @@ export class Blob {
     scene.add(this.ambientLight);
 
     this.sphere = new THREE.Mesh(this.sphereGeometry, this.material);
+    this.sphere.receiveShadow = true;
+    this.sphere.castShadow = true;
     scene.add(this.sphere);
 
     this.gammaCorrectionEffect = new GammaCorrectionEffect({ gamma: 1.2 });
-    this.composer = new EffectComposer(renderer, { multisampling: 8 });
+    this.composer = new EffectComposer(this.renderer, { multisampling: 8 });
     this.composer.addPass(new RenderPass(scene, camera));
     this.composer.addPass(new EffectPass(camera, this.gammaCorrectionEffect));
 
@@ -113,12 +113,14 @@ export class Blob {
       spikes,
       speed,
       gammaFactor,
+      shadows,
       blobMaterial,
       ambientLight,
       directionalLight1,
       directionalLight2,
     },
   ) {
+    this.renderer.shadowMap.enabled = shadows;
     this.gammaCorrectionEffect.gamma = gammaFactor;
 
     this.ambientLight.intensity = ambientLight.intensity;
@@ -131,6 +133,15 @@ export class Blob {
       directionalLight1.positionY,
       directionalLight1.positionZ,
     );
+    const directionalLight1Distance = this.directionalLight1.position.length();
+    this.directionalLight1.shadow.camera.left = -blobSize;
+    this.directionalLight1.shadow.camera.right = blobSize;
+    this.directionalLight1.shadow.camera.bottom = -blobSize;
+    this.directionalLight1.shadow.camera.top = blobSize;
+    this.directionalLight1.shadow.camera.near = directionalLight1Distance - blobSize;
+    this.directionalLight1.shadow.camera.far = directionalLight1Distance + blobSize;
+    this.directionalLight1.shadow.camera.width = 2048;
+    this.directionalLight1.shadow.camera.height = 2048;
 
     this.directionalLight2.intensity = directionalLight2.intensity;
     this.directionalLight2.color.set(directionalLight2.color);
@@ -139,6 +150,15 @@ export class Blob {
       directionalLight2.positionY,
       directionalLight2.positionZ,
     );
+    const directionalLight2Distance = this.directionalLight2.position.length();
+    this.directionalLight2.shadow.camera.left = -blobSize;
+    this.directionalLight2.shadow.camera.right = blobSize;
+    this.directionalLight2.shadow.camera.bottom = -blobSize;
+    this.directionalLight2.shadow.camera.top = blobSize;
+    this.directionalLight2.shadow.camera.near = directionalLight1Distance + blobSize;
+    this.directionalLight2.shadow.camera.far = directionalLight1Distance - blobSize;
+    this.directionalLight2.shadow.camera.width = 2048;
+    this.directionalLight2.shadow.camera.height = 2048;
 
     this.sphere.scale.set(blobSize, blobSize, blobSize);
 

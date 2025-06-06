@@ -282,6 +282,7 @@ ready().then(function () {
       spikeRatio: parameters.spikes.ratio,
       speed: speed,
       gammaFactor: parameters.scene.gamma,
+      shadows: parameters.scene.shadows,
       blobMaterial: {...parameters.blobMaterial},
       ambientLight: {...parameters.ambientLight},
       directionalLight1: {...parameters.directionalLight1},

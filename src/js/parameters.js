@@ -1,3 +1,66 @@
+/*
+{
+    "loudness": {
+        "min": 0.01,
+        "max": 0.05
+    },
+    "proximity": {
+        "min": 0.1,
+        "max": 1
+    },
+    "spikes": {
+        "ratio": 0.3,
+        "min": 0.2,
+        "max": 10,
+        "smoothing": 0.5,
+        "maxDelta": 0.2,
+        "use": "computed"
+    },
+    "speed": {
+        "min": 0.02,
+        "max": 0.2,
+        "smoothing": 0.5,
+        "maxDelta": 0.1,
+        "use": "computed"
+    },
+    "blob": {
+        "detail": 7,
+        "size": 1.3,
+        "offsetX": -180,
+        "offsetY": -80
+    },
+    "blobMaterial": {
+        "color": "#ffd09c",
+        "emissive": "#000000",
+        "specular": "#ffffff",
+        "shininess": 25,
+        "wireframe": false
+    },
+    "scene": {
+        "gamma": 1.1,
+        "background": "#000000",
+        "shadows": false
+    },
+    "ambientLight": {
+        "color": "#ffffff",
+        "intensity": 1
+    },
+    "directionalLight1": {
+        "color": "#ffffff",
+        "intensity": 0.7,
+        "positionX": 0,
+        "positionY": 500,
+        "positionZ": 200
+    },
+    "directionalLight2": {
+        "color": "#ffffff",
+        "intensity": 0.25,
+        "positionX": 0,
+        "positionY": -500,
+        "positionZ": 400
+    }
+}
+ */
 function boolean(value) {
   return {
     value,
@@ -72,6 +135,7 @@ const parametersWithGUI = {
   scene: {
     gamma: number(1.1, 0, 10, 0.01),
     background: color("#000000"),
+    shadows: boolean(false),
   },
 
   ambientLight: {
