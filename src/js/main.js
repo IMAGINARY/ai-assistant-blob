@@ -147,7 +147,7 @@ async function setupAsync(p) {
   video.hide();
   video.volume(0); // mute the video's audio
 
-  bodyPose.detectStart(video, gotPoses);
+  bodyPose.detectStart(video, (result) => {poses = result;});
 }
 
 function setup(p) {
@@ -158,6 +158,19 @@ function setup(p) {
 }
 
 function draw(p) {
+  updateInputs();
+
+  if (debugMode)
+    drawDebugPanel(p);
+}
+
+function updateInputs() {
+  updateParametersFromCss();
+  updateLoudness();
+  updateProximity();
+}
+
+function updateParametersFromCss() {
   const computedStyle = getComputedStyle(document.documentElement);
   for (let k of Object.keys(parameters)) {
     const cssProperty = `--${cc2kc(k)}`;
@@ -165,81 +178,29 @@ function draw(p) {
     const v = Number.parseFloat(cssValue);
     parameters[k] = v;
   }
-
-  if (mic) {
-    //get the level of amplitude of the mic
-    level = mic.getLevel(1);
-    const sampleTime = performance.now();
-    do {
-      const firstSample = samples.pop();
-      samples.unshift(level);
-      lastSampleTime += 1000 / 60;
-    } while((sampleTime - lastSampleTime) * 1000 / 60 > 0);
-    lastSampleTime = sampleTime;
-
-    const appliedEnvelope = samples.map((s, i) => envelopeSamples[i] * s);
-    const maxLoudness = Math.max(...appliedEnvelope);
-    const clampedLoudness = clamp(maxLoudness, parameters.minLoudness, parameters.maxLoudness);
-    if(parameters.maxLoudness - parameters.minLoudness < Number.EPSILON)
-      relativeLoudness= 0;
-    else
-      relativeLoudness = (clampedLoudness - parameters.minLoudness) / (parameters.maxLoudness - parameters.minLoudness);
-  }
-
-  if (debugMode) {
-    p.background(200);
-
-    p.fill(255);
-    p.stroke(0);
-
-    p.circle(300, 100, relativeLoudness * 300);
-
-    // Draw the webcam video
-    const debugVideoTop = debugPanelHeight / 3;
-    const debugVideoLeft = 0;
-    const debugVideoWidth = 2 * debugPanelWidth / 3;
-    const debugVideoHeight =  (debugVideoWidth * videoHeight) / videoWidth;
-    if (video) {
-      p.image(video, debugVideoLeft, debugVideoTop, debugVideoWidth, debugVideoHeight);
-
-      // Draw all the tracked landmark points
-      for (let i = 0; i < poses.length; i++) {
-        let pose = poses[i];
-        for (let j = 0; j < pose.keypoints.length; j++) {
-          let keypoint = pose.keypoints[j];
-          if (keypoint.confidence < minKeypointConfidence) continue;
-          p.fill(255, 255, 0);
-          p.stroke(0, 0, 0);
-          p.circle(
-              debugVideoLeft + (keypoint.x / videoWidth) * debugVideoWidth,
-              debugVideoTop + (keypoint.y / videoHeight) * debugVideoHeight,
-            20
-          );
-        }
-      }
-    }
-
-    p.fill(255);
-    p.stroke(0);
-    p.circle(
-      400 + (200 * videoWidth) / videoHeight + 100,
-      100,
-      relativeProximity * 100
-    );
-
-    p.fill(0);
-    p.noStroke();
-    p.text("Loudness", 200 + 10, 20);
-    p.text("Bodypose tracking", debugVideoLeft + 10, debugVideoTop + 20);
-    p.text("Proximity", 400 + (200 * videoWidth) / videoHeight + 10, 20);
-  }
 }
 
-// Callback function for when bodyPose outputs data
-function gotPoses(results) {
-  // Save the output to the poses variable
-  poses = results;
+function updateLoudness() {
+  //get the level of amplitude of the mic
+  level = mic ? mic.getLevel(1) : 0;
+  const sampleTime = performance.now();
+  do {
+    const firstSample = samples.pop();
+    samples.unshift(level);
+    lastSampleTime += 1000 / 60;
+  } while((sampleTime - lastSampleTime) * 1000 / 60 > 0);
+  lastSampleTime = sampleTime;
 
+  const appliedEnvelope = samples.map((s, i) => envelopeSamples[i] * s);
+  const maxLoudness = Math.max(...appliedEnvelope);
+  const clampedLoudness = clamp(maxLoudness, parameters.minLoudness, parameters.maxLoudness);
+  if(parameters.maxLoudness - parameters.minLoudness < Number.EPSILON)
+    relativeLoudness= 0;
+  else
+    relativeLoudness = (clampedLoudness - parameters.minLoudness) / (parameters.maxLoudness - parameters.minLoudness);
+}
+
+function updateProximity() {
   let screenspace = 0;
   for (let pose of poses) {
     const { width, height } = pose.box;
@@ -252,6 +213,54 @@ function gotPoses(results) {
     relativeProximity = 0;
   else
     relativeProximity = (proximity - parameters.minProximity) / (parameters.maxProximity - parameters.minProximity);
+}
+
+function drawDebugPanel(p) {
+  p.background(200);
+
+  p.fill(255);
+  p.stroke(0);
+
+  p.circle(300, 100, relativeLoudness * 300);
+
+  // Draw the webcam video
+  const debugVideoTop = debugPanelHeight / 3;
+  const debugVideoLeft = 0;
+  const debugVideoWidth = 2 * debugPanelWidth / 3;
+  const debugVideoHeight =  (debugVideoWidth * videoHeight) / videoWidth;
+  if (video) {
+    p.image(video, debugVideoLeft, debugVideoTop, debugVideoWidth, debugVideoHeight);
+
+    // Draw all the tracked landmark points
+    for (let i = 0; i < poses.length; i++) {
+      let pose = poses[i];
+      for (let j = 0; j < pose.keypoints.length; j++) {
+        let keypoint = pose.keypoints[j];
+        if (keypoint.confidence < minKeypointConfidence) continue;
+        p.fill(255, 255, 0);
+        p.stroke(0, 0, 0);
+        p.circle(
+            debugVideoLeft + (keypoint.x / videoWidth) * debugVideoWidth,
+            debugVideoTop + (keypoint.y / videoHeight) * debugVideoHeight,
+            20
+        );
+      }
+    }
+  }
+
+  p.fill(255);
+  p.stroke(0);
+  p.circle(
+      400 + (200 * videoWidth) / videoHeight + 100,
+      100,
+      relativeProximity * 100
+  );
+
+  p.fill(0);
+  p.noStroke();
+  p.text("Loudness", 200 + 10, 20);
+  p.text("Bodypose tracking", debugVideoLeft + 10, debugVideoTop + 20);
+  p.text("Proximity", 400 + (200 * videoWidth) / videoHeight + 10, 20);
 }
 
 const mainSketch = (p) => {
