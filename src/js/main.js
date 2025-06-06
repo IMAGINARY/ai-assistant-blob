@@ -1,3 +1,4 @@
+import {ready} from "./ready.js";
 import {Blob} from "./blob.js";
 
 let mic = null;
@@ -273,11 +274,11 @@ const mainSketch = (p) => {
 
 new p5(mainSketch);
 
-$(document).ready(function () {
+ready().then(function () {
   for (let [k, v] of Object.entries(parameters))
     document.documentElement.style.setProperty(`--${cc2kc(k)}`, v);
 
-  $(document).on("keydown", (e) => {
+  window.addEventListener("keydown", (e) => {
     if (e.key === "d") {
       toggleDevMode();
     }
