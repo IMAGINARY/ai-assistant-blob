@@ -46,7 +46,7 @@ const videoHeight = 480;
 let bodyPose;
 let poses = [];
 
-const minKeypointConfidence = 0.75;
+const minKeypointConfidence = 0.25;
 
 let debugMode = false;
 
