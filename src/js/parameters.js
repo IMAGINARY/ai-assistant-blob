@@ -1,66 +1,4 @@
-/*
-{
-    "loudness": {
-        "min": 0.01,
-        "max": 0.05
-    },
-    "proximity": {
-        "min": 0.1,
-        "max": 1
-    },
-    "spikes": {
-        "ratio": 0.3,
-        "min": 0.2,
-        "max": 10,
-        "smoothing": 0.5,
-        "maxDelta": 0.2,
-        "use": "computed"
-    },
-    "speed": {
-        "min": 0.02,
-        "max": 0.2,
-        "smoothing": 0.5,
-        "maxDelta": 0.1,
-        "use": "computed"
-    },
-    "blob": {
-        "detail": 7,
-        "size": 1.3,
-        "offsetX": -180,
-        "offsetY": -80
-    },
-    "blobMaterial": {
-        "color": "#ffd09c",
-        "emissive": "#000000",
-        "specular": "#ffffff",
-        "shininess": 25,
-        "wireframe": false
-    },
-    "scene": {
-        "gamma": 1.1,
-        "background": "#000000",
-        "shadows": false
-    },
-    "ambientLight": {
-        "color": "#ffffff",
-        "intensity": 1
-    },
-    "directionalLight1": {
-        "color": "#ffffff",
-        "intensity": 0.7,
-        "positionX": 0,
-        "positionY": 500,
-        "positionZ": 200
-    },
-    "directionalLight2": {
-        "color": "#ffffff",
-        "intensity": 0.25,
-        "positionX": 0,
-        "positionY": -500,
-        "positionZ": 400
-    }
-}
- */
+
 function boolean(value) {
   return {
     value,
@@ -91,8 +29,8 @@ function choice(value, choices) {
 
 const parametersWithGUI = {
   loudness: {
-    min: number(0.002, 0, 1, 0.001),
-    max: number(0.04, 0, 1, 0.001),
+    min: number(0.01, 0, 1, 0.001),
+    max: number(0.05, 0, 1, 0.001),
   },
 
   proximity: {
@@ -102,7 +40,7 @@ const parametersWithGUI = {
 
   spikes: {
     ratio: number(0.3, 0, 1, 0.001),
-    min: number(0.5, 0, 100, 0.01),
+    min: number(0.2, 0, 100, 0.01),
     max: number(10, 0, 100, 0.01),
     smoothing: number(0.5, 0, 1, 0.001),
     maxDelta: number(0.2, 0, 10, 0.01),
@@ -110,8 +48,8 @@ const parametersWithGUI = {
   },
 
   speed: {
-    min: number(0.05, 0, 100, 0.01),
-    max: number(2, 0, 100, 0.01),
+    min: number(0.02, 0, 100, 0.01),
+    max: number(0.2, 0, 100, 0.01),
     smoothing: number(0.5, 0, 1, 0.001),
     maxDelta: number(0.1, 0, 10, 0.01),
     use: choice("computed", ["computed", "min", "max"]),
@@ -125,10 +63,10 @@ const parametersWithGUI = {
   },
 
   blobMaterial: {
-    color: color("#ffe0d4"),
+    color: color("#ffd09c"),
     emissive: color("#000000"),
     specular: color("#ffffff"),
-    shininess: number(100, 0, 100, 0.1),
+    shininess: number(25, 0, 100, 0.1),
     wireframe: boolean(false),
   },
 

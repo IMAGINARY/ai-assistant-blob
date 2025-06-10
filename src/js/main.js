@@ -14,6 +14,7 @@ let sustainLevel = 0.75; // Sustain level (0 to 1)
 let sustainTime = 0; // Sustain time in seconds
 let releaseTime = 2; // Release time in seconds
 
+// TODO: Make these parameters adjustable via GUI
 let envelopeSamples = new Array(Math.ceil(60 * (attackTime + decayTime + sustainTime + releaseTime)))
     .fill(0).map((_, i) => {
       let t = i / 60; // Convert sample index to seconds
