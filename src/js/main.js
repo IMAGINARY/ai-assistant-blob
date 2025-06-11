@@ -1,4 +1,5 @@
 import GUI from 'lil-gui';
+import {AdsrEnvelope} from "./adsr-envelope.js";
 import createParametersWithGUI from './parameters.js';
 import {ready} from "./ready.js";
 import {Blob} from "./blob.js";
@@ -8,34 +9,7 @@ let level = 0;
 let relativeLoudness = 0;
 let relativeProximity = 0;
 
-let attackTime = 0.2; // Attack time in seconds
-let decayTime = 1; // Decay time in seconds
-let sustainLevel = 0.75; // Sustain level (0 to 1)
-let sustainTime = 0; // Sustain time in seconds
-let releaseTime = 2; // Release time in seconds
-
-// TODO: Make these parameters adjustable via GUI
-let envelopeSamples = new Array(Math.ceil(60 * (attackTime + decayTime + sustainTime + releaseTime)))
-    .fill(0).map((_, i) => {
-      let t = i / 60; // Convert sample index to seconds
-      if(t < attackTime)
-        return t / attackTime; // Linear increase during attack
-
-      t -= attackTime; // Adjust time for decay phase
-      if (t < decayTime)
-        return 1 - (t / decayTime) * (1 - sustainLevel); // Linear decrease during decay
-
-      t -= decayTime; // Adjust time for sustain phase
-      if (t < sustainTime)
-        return sustainLevel; // Sustain level
-
-      t -= sustainTime; // Adjust time for release phase
-      if (t <= releaseTime)
-        return sustainLevel * (1 - (t / releaseTime)); // Linear decrease during release
-    });
-
-let samples = new Array(envelopeSamples.length).fill(0);
-let lastSampleTime = performance.now();
+const adsrEnvelope = new AdsrEnvelope();
 
 // Fix the width and height of the canvas
 const canvasWidth = 3840;
@@ -153,17 +127,16 @@ function updateCss() {
 
 function updateLoudness() {
   //get the level of amplitude of the mic
-  level = mic ? mic.getLevel(1) : 0;
-  const sampleTime = performance.now();
-  do {
-    const firstSample = samples.pop();
-    samples.unshift(level);
-    lastSampleTime += 1000 / 60;
-  } while((sampleTime - lastSampleTime) * 1000 / 60 > 0);
-  lastSampleTime = sampleTime;
-
-  const appliedEnvelope = samples.map((s, i) => envelopeSamples[i] * s);
-  const maxLoudness = Math.max(...appliedEnvelope);
+  const level = mic ? mic.getLevel(1) : 0;
+  adsrEnvelope.attackTime = parameters.loudnessEnvelope.attackTime;
+  adsrEnvelope.decayTime = parameters.loudnessEnvelope.decayTime;
+  adsrEnvelope.sustainLevel = parameters.loudnessEnvelope.sustainLevel;
+  adsrEnvelope.sustainTime = parameters.loudnessEnvelope.sustainTime;
+  adsrEnvelope.releaseTime = parameters.loudnessEnvelope.releaseTime;
+  adsrEnvelope.samplesPerSecond = parameters.loudnessEnvelope.samplesPerSecond;
+  adsrEnvelope.appendSample(level);
+  const maxLoudness = adsrEnvelope.getMax();
+  console.log(adsrEnvelope, maxLoudness);
   const clampedLoudness = clamp(maxLoudness, parameters.loudness.min, parameters.loudness.max);
   if(parameters.loudness.max - parameters.loudness.min < Number.EPSILON)
     relativeLoudness= 0;

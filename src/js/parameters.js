@@ -1,4 +1,3 @@
-
 function boolean(value) {
   return {
     value,
@@ -31,6 +30,15 @@ const parametersWithGUI = {
   loudness: {
     min: number(0.01, 0, 1, 0.001),
     max: number(0.05, 0, 1, 0.001),
+  },
+
+  loudnessEnvelope: {
+    attackTime: number(0.1, 0, 10, 0.01),
+    decayTime: number(0.2, 0, 10, 0.01),
+    sustainLevel: number(0.75, 0, 1, 0.01),
+    sustainTime: number(0, 5, 0, 10, 0.01),
+    releaseTime: number(0.25, 0, 10, 0.01),
+    samplesPerSecond: number(60, 1, 1000, 1),
   },
 
   proximity: {
