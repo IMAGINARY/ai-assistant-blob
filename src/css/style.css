@@ -47,6 +47,12 @@ html {
   transform: scale(var(--scale-factor));
 }
 
+.lil-gui {
+  --widget-height: 20px !important;
+  --input-font-size: 11px !important;
+  --spacing: 2px !important;
+}
+
 #dev-control-panel::-webkit-scrollbar { /* WebKit */
   width: 0;
   height: 0;
