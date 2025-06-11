@@ -128,12 +128,7 @@ function updateCss() {
 function updateLoudness() {
   //get the level of amplitude of the mic
   const level = mic ? mic.getLevel(1) : 0;
-  adsrEnvelope.attackTime = parameters.loudnessEnvelope.attackTime;
-  adsrEnvelope.decayTime = parameters.loudnessEnvelope.decayTime;
-  adsrEnvelope.sustainLevel = parameters.loudnessEnvelope.sustainLevel;
-  adsrEnvelope.sustainTime = parameters.loudnessEnvelope.sustainTime;
-  adsrEnvelope.releaseTime = parameters.loudnessEnvelope.releaseTime;
-  adsrEnvelope.samplesPerSecond = parameters.loudnessEnvelope.samplesPerSecond;
+  adsrEnvelope.setParameters(parameters.loudnessEnvelope);
   adsrEnvelope.appendSample(level);
   const maxLoudness = adsrEnvelope.getMax();
   console.log(adsrEnvelope, maxLoudness);

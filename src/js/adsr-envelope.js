@@ -40,6 +40,38 @@ export class AdsrEnvelope {
     return this._releaseTime;
   }
 
+  getParameters() {
+    return {
+      attackTime: this._attackTime,
+      decayTime: this._decayTime,
+      sustainLevel: this._sustainLevel,
+      sustainTime: this._sustainTime,
+      releaseTime: this._releaseTime,
+      samplesPerSecond: this._samplesPerSecond,
+    };
+  }
+
+  setParameters(parameters) {
+    if (typeof parameters.attackTime !== "undefined") {
+      this.attackTime = parameters.attackTime;
+    }
+    if (typeof parameters.decayTime !== "undefined") {
+      this.decayTime = parameters.decayTime;
+    }
+    if (typeof parameters.sustainLevel !== "undefined") {
+      this.sustainLevel = parameters.sustainLevel;
+    }
+    if (typeof parameters.sustainTime !== "undefined") {
+      this.sustainTime = parameters.sustainTime;
+    }
+    if (typeof parameters.releaseTime !== "undefined") {
+      this.releaseTime = parameters.releaseTime;
+    }
+    if (typeof parameters.samplesPerSecond !== "undefined") {
+      this.samplesPerSecond = parameters.samplesPerSecond;
+    }
+  }
+
   set attackTime(value) {
     this._needsInit = value || this._attackTime !== value;
     this._attackTime = value;
