@@ -253,7 +253,7 @@ $(document).ready(function () {
   let geometry = new THREE.IcosahedronGeometry(parameters.blobBaseRadius, 6);
 
   let material = new THREE.MeshPhongMaterial({
-    color: 0xffe0d4,
+    color: 0xffdeb8,
     shininess: 100,
   });
 
