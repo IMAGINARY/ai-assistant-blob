@@ -34,10 +34,10 @@ const parametersWithGUI = {
 
   loudnessEnvelope: {
     attackTime: number(0.1, 0, 10, 0.01),
-    decayTime: number(0.2, 0, 10, 0.01),
+    decayTime: number(0.1, 0, 10, 0.01),
     sustainLevel: number(0.75, 0, 1, 0.01),
     sustainTime: number(0, 5, 0, 10, 0.01),
-    releaseTime: number(0.25, 0, 10, 0.01),
+    releaseTime: number(0.1, 0, 10, 0.01),
     samplesPerSecond: number(60, 1, 1000, 1),
   },
 
@@ -50,8 +50,8 @@ const parametersWithGUI = {
     ratio: number(0.3, 0, 1, 0.001),
     min: number(0.2, 0, 100, 0.01),
     max: number(10, 0, 100, 0.01),
-    smoothing: number(0.5, 0, 1, 0.001),
-    maxDelta: number(0.2, 0, 10, 0.01),
+    smoothing: number(0.1, 0, 1, 0.001),
+    maxDelta: number(1, 0, 10, 0.01),
     use: choice("computed", ["computed", "min", "max"]),
   },
 
