@@ -130,7 +130,6 @@ function updateLoudness() {
   adsrEnvelope.setParameters(parameters.loudnessEnvelope);
   adsrEnvelope.appendSample(level);
   const maxLoudness = adsrEnvelope.getMax();
-  console.log(adsrEnvelope, maxLoudness);
   const clampedLoudness = clamp(maxLoudness, parameters.loudness.min, parameters.loudness.max);
   if(parameters.loudness.max - parameters.loudness.min < Number.EPSILON)
     relativeLoudness= 0;
