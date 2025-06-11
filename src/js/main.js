@@ -5,7 +5,6 @@ import {ready} from "./ready.js";
 import {Blob} from "./blob.js";
 
 let mic = null;
-let level = 0;
 let relativeLoudness = 0;
 let relativeProximity = 0;
 
