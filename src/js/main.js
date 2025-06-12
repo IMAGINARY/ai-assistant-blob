@@ -231,12 +231,56 @@ const mainSketch = (p) => {
 
 new p5(mainSketch);
 
+async function delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function calibrateBodyPose() {
+  const initialDelaySeconds = 10;
+  const iterationDelaySeconds = 1;
+  const minIterationCount = 5;
+  console.log(`Starting body pose calibration in ${initialDelaySeconds}s`);
+  await delay(initialDelaySeconds * 1000);
+
+  console.log("Starting body pose calibration now");
+  const minCalibrationConfidence = 0.5;
+  const connections = bodyPose.getConnections();
+  const edgesWithProps = connections.map(([v1, v2]) => ({
+    edge: [v1, v2],
+    length: -1,
+  }));
+
+  for(let i = 1; true; i += 1) {
+    console.log(`Iteration ${i}`);
+    poses.forEach((pose) => {
+      edgesWithProps.forEach((edgeWithProps, i) => {
+        const [v1, v2] = edgeWithProps.edge;
+        const kp1 = pose.keypoints[v1];
+        const kp2 = pose.keypoints[v2];
+        if( kp1.confidence > minCalibrationConfidence || kp2.confidence > minCalibrationConfidence) {
+          const length = Math.sqrt((kp1.x - kp2.x) ** 2 + (kp1.y - kp2.y) ** 2);
+          edgeWithProps.length = Math.max(edgeWithProps.length, length);
+        }
+      })
+    });
+
+    const minLength = Math.min(...edgesWithProps.map(({length}) => length));
+    const done = i >= minIterationCount && minLength > 0;
+    if(done)
+      break;
+    await delay(iterationDelaySeconds * 1000);
+  }
+
+  console.log("Calibration complete. Edges with properties:", edgesWithProps);
+}
+
 ready().then(function () {
   const gui = new GUI({ container: document.querySelector('#dev-control-panel') });
   const guiTools = {
     "Log to console": () => console.log(parameters),
+    "Calibrate body pose": calibrateBodyPose,
   }
-  gui.add(guiTools, "Log to console");
+  Object.keys(guiTools).forEach((key) => gui.add(guiTools, key));
   buildParameterGUI(gui);
 
   window.addEventListener("keydown", (e) => {
