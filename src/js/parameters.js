@@ -51,15 +51,17 @@ const parametersWithGUI = {
     samplesPerSecond: slider(60, 1, 1000, 1),
   },
 
-  proximity: {
+  distance: {
     value: number(1000, 4),
     relValue: slider(1, 0, 1, 0.001),
-    min: slider(0.1, 0, 100, 0.001),
-    max: slider(1, 0, 100, 0.001),
+    min: slider(1, 0, 100, 0.001),
+    max: slider(5, 0, 100, 0.001),
+    calibrationDistance: slider(5, 0, 100, 0.001),
   },
 
   spikes: {
-    value: slider(0, 0, 1, 0.001),
+    value: number(0.2, 4),
+    relValue: slider(0, 0, 1, 0.001),
     ratio: slider(0.3, 0, 1, 0.001),
     min: slider(0.2, 0, 100, 0.01),
     max: slider(10, 0, 100, 0.01),
@@ -69,7 +71,8 @@ const parametersWithGUI = {
   },
 
   speed: {
-    value: slider(0, 0, 1, 0.001),
+    value: number(0.02, 4),
+    relValue: slider(0, 0, 1, 0.001),
     min: slider(0.02, 0, 100, 0.01),
     max: slider(0.2, 0, 100, 0.01),
     smoothing: slider(0.5, 0, 1, 0.001),

@@ -22,6 +22,25 @@ const debugPanelHeight = debugPanelWidth * (videoHeight / videoWidth);
 let bodyPose;
 let poses = [];
 
+const bodyPoseCalibrationData = [
+  {"edge": [0, 1], "length": 14.301801345203806},
+  {"edge": [0, 2], "length": 11.953981572261926},
+  {"edge": [1, 3], "length": 23.14288087964115},
+  {"edge": [2, 4], "length": 25.63858145077031},
+  {"edge": [5, 6], "length": 92.13539103378947},
+  {"edge": [5, 7], "length": 66.29024934865839},
+  {"edge": [5, 11], "length": 141.1914734699386},
+  {"edge": [6, 8], "length": 72.83002587952937},
+  {"edge": [6, 12], "length": 138.36247679762778},
+  {"edge": [7, 9], "length": 70.18937978914478},
+  {"edge": [8, 10], "length": 67.54234321771733},
+  {"edge": [11, 12], "length": 57.41601742212445},
+  {"edge": [11, 13], "length": 107.73159210500128},
+  {"edge": [12, 14], "length": 105.93599863645467},
+  {"edge": [13, 15], "length": 97.7252829601421},
+  {"edge": [14, 16], "length": 96.02396705786506}
+];
+
 const minKeypointConfidence = 0.25;
 
 const {parameters, buildParameterGUI} = createParametersWithGUI();
@@ -113,7 +132,7 @@ function draw(p) {
 function updateInputs() {
   updateCss();
   updateLoudness();
-  updateProximity();
+  updateDistance();
   updateSpikes();
   updateSpeed();
 }
@@ -140,33 +159,44 @@ function updateLoudness() {
     parameters.loudness.relValue = (clampedLoudness - parameters.loudness.min) / (parameters.loudness.max - parameters.loudness.min);
 }
 
-function updateProximity() {
-  let screenspace = 0;
-  for (let pose of poses) {
-    const { width, height } = pose.box;
-    screenspace += width * height;
-  }
+function updateDistance() {
+  const maxRelEdgeLength = poses.reduce((maxRelEdgeLength, pose) => {
+    const maxPoseRelEdgeLength = bodyPoseCalibrationData.reduce((maxPoseRelEdgeLength,edgeWithProps)=>{
+      const [v1, v2] = edgeWithProps.edge;
+      const kp1 = pose.keypoints[v1];
+      const kp2 = pose.keypoints[v2];
+      if( kp1.confidence < minKeypointConfidence && kp2.confidence < minKeypointConfidence)
+        return maxPoseRelEdgeLength;
 
-  const proximityProxy = 1 - screenspace / (videoWidth * videoHeight);
-  parameters.proximity.value = proximityProxy;
-  let proximity = clamp(proximityProxy, parameters.proximity.min, parameters.proximity.max);
-  if( parameters.proximity.max - parameters.proximity.min < Number.EPSILON)
-    parameters.proximity.relValue = 0;
+      const edgeLength = Math.sqrt((kp1.x - kp2.x) ** 2 + (kp1.y - kp2.y) ** 2);
+      return Math.max(maxPoseRelEdgeLength, edgeLength / edgeWithProps.length);
+    }, 0);
+    return Math.max(maxRelEdgeLength, maxPoseRelEdgeLength);
+  }, 0);
+
+  const distance = maxRelEdgeLength !== 0 ? parameters.distance.calibrationDistance / maxRelEdgeLength : Number.MAX_VALUE;
+  parameters.distance.value = distance;
+
+  let clampedDistance = clamp(distance, parameters.distance.min, parameters.distance.max);
+  if( parameters.distance.max - parameters.distance.min < Number.EPSILON)
+    parameters.distance.relValue = 1;
   else
-    parameters.proximity.relValue = (proximity - parameters.proximity.min) / (parameters.proximity.max - parameters.proximity.min);
+    parameters.distance.relValue = (clampedDistance - parameters.distance.min) / (parameters.distance.max - parameters.distance.min);
 }
 
 function updateSpikes() {
   const newSpikes = parameters.spikes.min + parameters.loudness.relValue * (parameters.spikes.max - parameters.spikes.min);
   let spikes = lerp(parameters.spikes.value, newSpikes, parameters.spikes.smoothing, parameters.spikes.maxDelta);
   spikes = {computed: spikes, min: parameters.spikes.min, max: parameters.spikes.max}[parameters.spikes.use];
+  parameters.spikes.relValue = (spikes - parameters.spikes.min) / (parameters.spikes.max - parameters.spikes.min);
   parameters.spikes.value = spikes;
 }
 
 function updateSpeed() {
-  const newSpeed = parameters.speed.min + parameters.proximity.relValue * (parameters.speed.max - parameters.speed.min);
+  const newSpeed = parameters.speed.min + parameters.distance.relValue * (parameters.speed.max - parameters.speed.min);
   let speed = lerp(parameters.speed.value, newSpeed, parameters.speed.smoothing, parameters.speed.maxDelta);
   speed = {computed: speed, min: parameters.speed.min, max: parameters.speed.max}[parameters.speed.use];
+  parameters.speed.relValue = (speed - parameters.speed.min) / (parameters.speed.max - parameters.speed.min);
   parameters.speed.value = speed;
 }
 
