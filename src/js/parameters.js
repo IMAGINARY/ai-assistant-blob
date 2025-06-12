@@ -5,6 +5,13 @@ function checkbox(value) {
   };
 }
 
+function number(value, decimals = 3) {
+  return {
+    value,
+    addToGUI: (gui, obj, prop) => gui.add(obj, prop).decimals(decimals),
+  };
+}
+
 function slider(value, min, max, step, decimals = 3) {
   return {
     value,
@@ -29,6 +36,8 @@ function dropdown(value, choices) {
 
 const parametersWithGUI = {
   loudness: {
+    value: slider(0, 0, 1, 0.001, 4),
+    relValue: slider(0, 0, 1, 0.001),
     min: slider(0.01, 0, 1, 0.001),
     max: slider(0.05, 0, 1, 0.001),
   },
@@ -43,11 +52,14 @@ const parametersWithGUI = {
   },
 
   proximity: {
+    value: number(1000, 4),
+    relValue: slider(1, 0, 1, 0.001),
     min: slider(0.1, 0, 100, 0.001),
     max: slider(1, 0, 100, 0.001),
   },
 
   spikes: {
+    value: slider(0, 0, 1, 0.001),
     ratio: slider(0.3, 0, 1, 0.001),
     min: slider(0.2, 0, 100, 0.01),
     max: slider(10, 0, 100, 0.01),
@@ -57,6 +69,7 @@ const parametersWithGUI = {
   },
 
   speed: {
+    value: slider(0, 0, 1, 0.001),
     min: slider(0.02, 0, 100, 0.01),
     max: slider(0.2, 0, 100, 0.01),
     smoothing: slider(0.5, 0, 1, 0.001),

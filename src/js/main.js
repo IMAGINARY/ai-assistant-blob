@@ -5,8 +5,6 @@ import {ready} from "./ready.js";
 import {Blob} from "./blob.js";
 
 let mic = null;
-let relativeLoudness = 0;
-let relativeProximity = 0;
 
 const adsrEnvelope = new AdsrEnvelope();
 
@@ -14,12 +12,13 @@ const adsrEnvelope = new AdsrEnvelope();
 const canvasWidth = 3840;
 const canvasHeight = 2160;
 
-const debugPanelWidth = canvasWidth / 3;
-const debugPanelHeight = canvasHeight / 3;
-
 let video = null;
-const videoWidth = 640;
-const videoHeight = 480;
+const videoWidth = 1280;
+const videoHeight = 960;
+
+const debugPanelWidth = canvasWidth / 3;
+const debugPanelHeight = debugPanelWidth * (videoHeight / videoWidth);
+
 let bodyPose;
 let poses = [];
 
@@ -115,6 +114,8 @@ function updateInputs() {
   updateCss();
   updateLoudness();
   updateProximity();
+  updateSpikes();
+  updateSpeed();
 }
 
 function updateCss() {
@@ -130,11 +131,13 @@ function updateLoudness() {
   adsrEnvelope.setParameters(parameters.loudnessEnvelope);
   adsrEnvelope.appendSample(level);
   const maxLoudness = adsrEnvelope.getMax();
+  parameters.loudness.value = maxLoudness;
+
   const clampedLoudness = clamp(maxLoudness, parameters.loudness.min, parameters.loudness.max);
   if(parameters.loudness.max - parameters.loudness.min < Number.EPSILON)
-    relativeLoudness= 0;
+    parameters.loudness.relValue = 0;
   else
-    relativeLoudness = (clampedLoudness - parameters.loudness.min) / (parameters.loudness.max - parameters.loudness.min);
+    parameters.loudness.relValue = (clampedLoudness - parameters.loudness.min) / (parameters.loudness.max - parameters.loudness.min);
 }
 
 function updateProximity() {
@@ -145,28 +148,32 @@ function updateProximity() {
   }
 
   const proximityProxy = 1 - screenspace / (videoWidth * videoHeight);
+  parameters.proximity.value = proximityProxy;
   let proximity = clamp(proximityProxy, parameters.proximity.min, parameters.proximity.max);
   if( parameters.proximity.max - parameters.proximity.min < Number.EPSILON)
-    relativeProximity = 0;
+    parameters.proximity.relValue = 0;
   else
-    relativeProximity = (proximity - parameters.proximity.min) / (parameters.proximity.max - parameters.proximity.min);
+    parameters.proximity.relValue = (proximity - parameters.proximity.min) / (parameters.proximity.max - parameters.proximity.min);
+}
+
+function updateSpikes() {
+  const newSpikes = parameters.spikes.min + parameters.loudness.relValue * (parameters.spikes.max - parameters.spikes.min);
+  let spikes = lerp(parameters.spikes.value, newSpikes, parameters.spikes.smoothing, parameters.spikes.maxDelta);
+  spikes = {computed: spikes, min: parameters.spikes.min, max: parameters.spikes.max}[parameters.spikes.use];
+  parameters.spikes.value = spikes;
+}
+
+function updateSpeed() {
+  const newSpeed = parameters.speed.min + parameters.proximity.relValue * (parameters.speed.max - parameters.speed.min);
+  let speed = lerp(parameters.speed.value, newSpeed, parameters.speed.smoothing, parameters.speed.maxDelta);
+  speed = {computed: speed, min: parameters.speed.min, max: parameters.speed.max}[parameters.speed.use];
+  parameters.speed.value = speed;
 }
 
 function drawDebugPanel(p) {
-  p.background(200);
-
-  p.fill(255);
-  p.stroke(0);
-
-  p.circle(300, 100, relativeLoudness * 300);
-
   // Draw the webcam video
-  const debugVideoTop = debugPanelHeight / 3;
-  const debugVideoLeft = 0;
-  const debugVideoWidth = 2 * debugPanelWidth / 3;
-  const debugVideoHeight =  (debugVideoWidth * videoHeight) / videoWidth;
   if (video) {
-    p.image(video, debugVideoLeft, debugVideoTop, debugVideoWidth, debugVideoHeight);
+    p.image(video, 0, 0, debugPanelWidth, debugPanelHeight);
 
     // Draw all the tracked landmark points
     for (let i = 0; i < poses.length; i++) {
@@ -177,27 +184,13 @@ function drawDebugPanel(p) {
         p.fill(255, 255, 0);
         p.stroke(0, 0, 0);
         p.circle(
-            debugVideoLeft + (keypoint.x / videoWidth) * debugVideoWidth,
-            debugVideoTop + (keypoint.y / videoHeight) * debugVideoHeight,
-            20
+            (keypoint.x / video.width) * debugPanelWidth,
+            (keypoint.y / video.height) * debugPanelHeight,
+            30
         );
       }
     }
   }
-
-  p.fill(255);
-  p.stroke(0);
-  p.circle(
-      400 + (200 * videoWidth) / videoHeight + 100,
-      100,
-      relativeProximity * 100
-  );
-
-  p.fill(0);
-  p.noStroke();
-  p.text("Loudness", 200 + 10, 20);
-  p.text("Bodypose tracking", debugVideoLeft + 10, debugVideoTop + 20);
-  p.text("Proximity", 400 + (200 * videoWidth) / videoHeight + 10, 20);
 }
 
 const mainSketch = (p) => {
@@ -230,24 +223,17 @@ ready().then(function () {
 
   const detail = 7;
   const blob = new Blob(canvas, detail);
-  let spikes = parameters.spikes.min;
-  let speed = parameters.speed.min;
 
   function animate(timestamp) {
-    const newSpikes = parameters.spikes.min + relativeLoudness * (parameters.spikes.max - parameters.spikes.min);
-    spikes = lerp(spikes, newSpikes, parameters.spikes.smoothing, parameters.spikes.maxDelta);
-    spikes = {computed: spikes, min: parameters.spikes.min, max: parameters.spikes.max}[parameters.spikes.use];
-
-    const newSpeed = parameters.speed.min + relativeProximity * (parameters.speed.max - parameters.speed.min);
-    speed = lerp(speed, newSpeed, parameters.speed.smoothing, parameters.speed.maxDelta);
-    speed = {computed: speed, min: parameters.speed.min, max: parameters.speed.max}[parameters.speed.use];
+    if (isDevMode())
+      gui.controllersRecursive().forEach(c => c.updateDisplay());
 
     const blobParameters = {
       detail: parameters.blob.detail,
       blobSize: parameters.blob.size,
-      spikes: spikes,
+      spikes: parameters.spikes.value,
       spikeRatio: parameters.spikes.ratio,
-      speed: speed,
+      speed: parameters.speed.value,
       gammaFactor: parameters.scene.gamma,
       shadows: parameters.scene.shadows,
       blobMaterial: {...parameters.blobMaterial},
