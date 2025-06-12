@@ -1,25 +1,26 @@
-function boolean(value) {
+function checkbox(value) {
   return {
     value,
     addToGUI: (gui, obj, prop) => gui.add(obj, prop),
   };
 }
 
-function number(value, min, max, step) {
+function slider(value, min, max, step, decimals = 3) {
   return {
     value,
-    addToGUI: (gui, obj, prop) => gui.add(obj, prop, min, max, step),
+    addToGUI: (gui, obj, prop) =>
+      gui.add(obj, prop, min, max, step).decimals(decimals),
   };
 }
 
-function color(value) {
+function colorPicker(value) {
   return {
     value,
     addToGUI: (gui, obj, prop) => gui.addColor(obj, prop),
   };
 }
 
-function choice(value, choices) {
+function dropdown(value, choices) {
   return {
     value,
     addToGUI: (gui, obj, prop) => gui.add(obj, prop, choices),
@@ -28,85 +29,85 @@ function choice(value, choices) {
 
 const parametersWithGUI = {
   loudness: {
-    min: number(0.01, 0, 1, 0.001),
-    max: number(0.05, 0, 1, 0.001),
+    min: slider(0.01, 0, 1, 0.001),
+    max: slider(0.05, 0, 1, 0.001),
   },
 
   loudnessEnvelope: {
-    attackTime: number(0.1, 0, 10, 0.01),
-    decayTime: number(0.1, 0, 10, 0.01),
-    sustainLevel: number(0.75, 0, 1, 0.01),
-    sustainTime: number(0, 5, 0, 10, 0.01),
-    releaseTime: number(0.1, 0, 10, 0.01),
-    samplesPerSecond: number(60, 1, 1000, 1),
+    attackTime: slider(0.1, 0, 10, 0.01),
+    decayTime: slider(0.1, 0, 10, 0.01),
+    sustainLevel: slider(0.75, 0, 1, 0.01),
+    sustainTime: slider(0, 5, 0, 10, 0.01),
+    releaseTime: slider(0.1, 0, 10, 0.01),
+    samplesPerSecond: slider(60, 1, 1000, 1),
   },
 
   proximity: {
-    min: number(0.1, 0, 1, 0.001),
-    max: number(1, 0, 1, 0.001),
+    min: slider(0.1, 0, 100, 0.001),
+    max: slider(1, 0, 100, 0.001),
   },
 
   spikes: {
-    ratio: number(0.3, 0, 1, 0.001),
-    min: number(0.2, 0, 100, 0.01),
-    max: number(10, 0, 100, 0.01),
-    smoothing: number(0.1, 0, 1, 0.001),
-    maxDelta: number(1, 0, 10, 0.01),
-    use: choice("computed", ["computed", "min", "max"]),
+    ratio: slider(0.3, 0, 1, 0.001),
+    min: slider(0.2, 0, 100, 0.01),
+    max: slider(10, 0, 100, 0.01),
+    smoothing: slider(0.1, 0, 1, 0.001),
+    maxDelta: slider(1, 0, 10, 0.01),
+    use: dropdown("computed", ["computed", "min", "max"]),
   },
 
   speed: {
-    min: number(0.02, 0, 100, 0.01),
-    max: number(0.2, 0, 100, 0.01),
-    smoothing: number(0.5, 0, 1, 0.001),
-    maxDelta: number(0.1, 0, 10, 0.01),
-    use: choice("computed", ["computed", "min", "max"]),
+    min: slider(0.02, 0, 100, 0.01),
+    max: slider(0.2, 0, 100, 0.01),
+    smoothing: slider(0.5, 0, 1, 0.001),
+    maxDelta: slider(0.1, 0, 10, 0.01),
+    use: dropdown("computed", ["computed", "min", "max"]),
   },
 
   blob: {
-    detail: number(7, 0, 8, 1),
-    size: number(1.3, 0.1, 3, 0.01),
-    offsetX: number(-180, -10000, 10000, 1),
-    offsetY: number(80, -10000, 10000, 1),
+    detail: slider(7, 0, 8, 1),
+    size: slider(1.3, 0.1, 3, 0.01),
+    offsetX: slider(-180, -10000, 10000, 1),
+    offsetY: slider(80, -10000, 10000, 1),
   },
 
   blobMaterial: {
-    color: color("#ffd09c"),
-    emissive: color("#000000"),
-    specular: color("#ffffff"),
-    shininess: number(25, 0, 100, 0.1),
-    wireframe: boolean(false),
+    color: colorPicker("#ffd09c"),
+    emissive: colorPicker("#000000"),
+    specular: colorPicker("#ffffff"),
+    shininess: slider(25, 0, 100, 0.1),
+    wireframe: checkbox(false),
   },
 
   scene: {
-    gamma: number(1.1, 0, 10, 0.01),
-    background: color("#000000"),
-    shadows: boolean(false),
+    gamma: slider(1.1, 0, 10, 0.01),
+    background: colorPicker("#000000"),
+    shadows: checkbox(false),
   },
 
   ambientLight: {
-    color: color("#ffffff"),
-    intensity: number(1, 0, 1, 0.001),
+    color: colorPicker("#ffffff"),
+    intensity: slider(1, 0, 1, 0.001),
   },
 
   directionalLight1: {
-    color: color("#ffffff"),
-    intensity: number(0.7, 0, 1, 0.001),
-    positionX: number(0, -1000, 1000, 1),
-    positionY: number(10, -1000, 1000, 1),
-    positionZ: number(4, -1000, 1000, 1),
-    bias: number(0, -1, 1, 0.001),
-    normalBias: number(0.015, -1, 1, 0.001),
+    color: colorPicker("#ffffff"),
+    intensity: slider(0.7, 0, 1, 0.001),
+    positionX: slider(0, -1000, 1000, 1),
+    positionY: slider(10, -1000, 1000, 1),
+    positionZ: slider(4, -1000, 1000, 1),
+    bias: slider(0, -1, 1, 0.001),
+    normalBias: slider(0.015, -1, 1, 0.001),
   },
 
   directionalLight2: {
-    color: color("#ffffff"),
-    intensity: number(0.25, 0, 1, 0.001),
-    positionX: number(0, -1000, 1000, 1),
-    positionY: number(-5, -1000, 1000, 1),
-    positionZ: number(4, -1000, 1000, 1),
-    bias: number(0.015, -1, 1, 0.001),
-    normalBias: number(0, -1, 1, 0.001),
+    color: colorPicker("#ffffff"),
+    intensity: slider(0.25, 0, 1, 0.001),
+    positionX: slider(0, -1000, 1000, 1),
+    positionY: slider(-5, -1000, 1000, 1),
+    positionZ: slider(4, -1000, 1000, 1),
+    bias: slider(0.015, -1, 1, 0.001),
+    normalBias: slider(0, -1, 1, 0.001),
   },
 };
 
