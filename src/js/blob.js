@@ -1,7 +1,14 @@
 import * as THREE from "three/webgpu";
-import { output, vec3, vec4, pow, uniform } from 'three/tsl'
+import {
+  positionGeometry,
+  output,
+  uniform,
+  varying,
+  vec3,
+  vec4,
+} from "three/tsl";
 import { createUnitSphereBufferGeometry } from "./sphere.js";
-import { createNoise3D } from "simplex-noise";
+import { psrdnoise } from "./tsl/psrdnoise.js";
 
 export class Blob {
   constructor(canvas, detail = 5) {
@@ -12,8 +19,6 @@ export class Blob {
     });
 
     this.detail = detail;
-
-    this.noise3D = createNoise3D();
 
     this.renderer.setSize(canvas.width, canvas.height);
     this.renderer.setPixelRatio(window.devicePixelRatio || 1);
@@ -30,33 +35,84 @@ export class Blob {
 
     // Create high resolution sphere geometry
     this.sphereGeometry = Blob.createSphereGeometry(detail);
-    this.clonedVertices = new Float32Array(
-      this.sphereGeometry.attributes.position.array,
-    );
 
     this.material = new THREE.MeshPhongNodeMaterial({
       color: 0xffe0d4,
       specular: 0xffffff,
       shininess: 100,
     });
+
+    // Blob parameters as TSL uniforms
+    this.spikeRatio = uniform(1);
+    this.spikes = uniform(1);
+    this.time = uniform(0);
+
+    // Compute the displacement and normal perturbation in TSL
+    // Bases on https://stegu.github.io/psrdnoise/3d-tutorial/3d-psrdnoise-tutorial-07.html
+    // The displacement is computed per vertex.
+    const normalizedPosition = positionGeometry.normalize();
+    const snoiseResult = psrdnoise(
+      normalizedPosition.mul(this.spikes).add(this.time),
+      vec3(0, 0, 0),
+      0,
+    ).toVar("snoiseResult");
+    const snoise = snoiseResult.w.toVar("snoise");
+    const newLength = this.spikeRatio
+      .oneMinus()
+      .add(this.spikeRatio.mul(snoise))
+      .toVar("newLength");
+    const position = normalizedPosition
+      .mul(newLength)
+      .toVar("blobVertexPosition");
+
+    // Set perFragmentNormals to false to use cheaper per-vertex normals
+    const perFragmentNormals = true;
+    const sphereNormal = normalizedPosition;
+    const snoiseGradient = (
+      perFragmentNormals ? snoiseResult.xyz : varying(snoiseResult.xyz)
+    ).toVar("snoiseGradient");
+    // We work in the unit sphere coordinates, but we applied the noise function to a scaled unit sphere, so we need
+    // to scale the gradient accordingly (chain rule of partial derivatives).
+    const gradient = snoiseGradient.mul(this.spikes).toVar("gradient");
+
+    // Perturb normal
+    const normalPerturbation = gradient
+      .sub(gradient.dot(sphereNormal).mul(sphereNormal))
+      .toVar("normalPerturbation");
+    const normal = sphereNormal
+      .sub(this.spikeRatio.mul(normalPerturbation))
+      .normalize()
+      .toVar("blobNormal");
+
+    // Override the default material inputs
+    this.material.positionNode = position;
+    this.material.normalNode = normal;
+
+    // Apply gamma correction to the output color (for legacy compatibility)
     this.gamma = uniform(1);
-    this.material.outputNode = vec4(pow(output.rgb, vec3(this.gamma, this.gamma, this.gamma)), output.a);
+    this.material.outputNode = vec4(output.rgb.pow(this.gamma), output.a);
 
     this.directionalLight1 = new THREE.DirectionalLight();
     this.directionalLight1.castShadow = true;
     this.directionalLight1.shadow.mapSize.set(2048, 2048);
     scene.add(this.directionalLight1);
 
-    this.directionalLight1Helper = new THREE.DirectionalLightHelper( this.directionalLight1, 0.25 );
-    scene.add( this.directionalLight1Helper );
+    this.directionalLight1Helper = new THREE.DirectionalLightHelper(
+      this.directionalLight1,
+      0.25,
+    );
+    scene.add(this.directionalLight1Helper);
 
     this.directionalLight2 = new THREE.DirectionalLight();
     this.directionalLight2.castShadow = true;
     this.directionalLight2.shadow.mapSize.set(2048, 2048);
     scene.add(this.directionalLight2);
 
-    this.directionalLight2Helper = new THREE.DirectionalLightHelper( this.directionalLight2, 0.25 );
-    scene.add( this.directionalLight2Helper );
+    this.directionalLight2Helper = new THREE.DirectionalLightHelper(
+      this.directionalLight2,
+      0.25,
+    );
+    scene.add(this.directionalLight2Helper);
 
     this.ambientLight = new THREE.AmbientLight(0xffffff, 1);
     scene.add(this.ambientLight);
@@ -68,7 +124,6 @@ export class Blob {
 
     this.render = () => this.renderer.render(scene, camera);
 
-    this.time = 0;
     this.lastTimestamp = -1;
   }
 
@@ -79,29 +134,6 @@ export class Blob {
     sphereGeometry.getAttribute("normal").setUsage(THREE.StreamDrawUsage);
 
     return sphereGeometry;
-  }
-
-  updateGeometry(spikeRatio, factor, offset) {
-    const v = this.clonedVertices;
-    const positionAttribute = this.sphere.geometry.getAttribute("position");
-    for (let j = 0; j < positionAttribute.count; j += 1) {
-      const i = j * 3;
-      let x = v[i + 0];
-      let y = v[i + 1];
-      let z = v[i + 2];
-
-      const simplexNoise = this.noise3D(
-        x * factor + offset,
-        y * factor + offset,
-        z * factor + offset,
-      );
-
-      const newLength = 1 - spikeRatio + spikeRatio * simplexNoise;
-      positionAttribute.setXYZ(j, x * newLength, y * newLength, z * newLength);
-    }
-    positionAttribute.needsUpdate = true;
-    this.sphere.geometry.computeVertexNormals();
-    this.sphere.geometry.vertexNormalsNeedUpdate = true;
   }
 
   animate(
@@ -176,10 +208,13 @@ export class Blob {
     this.material.shininess = blobMaterial.shininess;
     this.material.wireframe = blobMaterial.wireframe;
 
+    this.spikeRatio.value = spikeRatio;
+    this.spikes.value = spikes;
+
     const timeDiff =
       this.lastTimestamp === -1 ? 0 : timestamp - this.lastTimestamp;
     this.lastTimestamp = timestamp;
-    this.time += (timeDiff * speed) / 1000;
+    this.time.value += (timeDiff * speed) / 1000;
 
     if (this.detail !== detail) {
       this.sphereGeometry = Blob.createSphereGeometry(detail);
@@ -190,7 +225,6 @@ export class Blob {
       this.sphere.geometry = this.sphereGeometry;
     }
 
-    this.updateGeometry(spikeRatio, spikes, this.time);
     this.render();
   }
 }
