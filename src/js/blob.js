@@ -1,19 +1,14 @@
-import * as THREE from "three";
-import { EffectComposer, EffectPass, RenderPass } from "postprocessing";
-import { GammaCorrectionEffect } from "./GammaCorrectionEffect.js";
+import * as THREE from "three/webgpu";
+import { output, vec3, vec4, pow, uniform } from 'three/tsl'
 import { createUnitSphereBufferGeometry } from "./sphere.js";
 import { createNoise3D } from "simplex-noise";
 
 export class Blob {
   constructor(canvas, detail = 5) {
-    this.renderer = new THREE.WebGLRenderer({
+    this.renderer = new THREE.WebGPURenderer({
       canvas: canvas,
-      context: canvas.getContext("webgl2"),
       powerPreference: "high-performance",
-      antialias: false,
-      stencil: false,
-      depth: false,
-      alpha: true,
+      antialias: true,
     });
 
     this.detail = detail;
@@ -39,11 +34,13 @@ export class Blob {
       this.sphereGeometry.attributes.position.array,
     );
 
-    this.material = new THREE.MeshPhongMaterial({
+    this.material = new THREE.MeshPhongNodeMaterial({
       color: 0xffe0d4,
       specular: 0xffffff,
       shininess: 100,
     });
+    this.gamma = uniform(1);
+    this.material.outputNode = vec4(pow(output.rgb, vec3(this.gamma, this.gamma, this.gamma)), output.a);
 
     this.directionalLight1 = new THREE.DirectionalLight();
     this.directionalLight1.castShadow = true;
@@ -69,12 +66,7 @@ export class Blob {
     this.sphere.castShadow = true;
     scene.add(this.sphere);
 
-    this.gammaCorrectionEffect = new GammaCorrectionEffect({ gamma: 1.2 });
-    this.composer = new EffectComposer(this.renderer, { multisampling: 8 });
-    this.composer.addPass(new RenderPass(scene, camera));
-    this.composer.addPass(new EffectPass(camera, this.gammaCorrectionEffect));
-
-    this.render = () => this.composer.render(scene, camera);
+    this.render = () => this.renderer.render(scene, camera);
 
     this.time = 0;
     this.lastTimestamp = -1;
@@ -129,7 +121,7 @@ export class Blob {
     },
   ) {
     this.renderer.shadowMap.enabled = shadows;
-    this.gammaCorrectionEffect.gamma = gammaFactor;
+    this.gamma.value = gammaFactor;
 
     this.ambientLight.intensity = ambientLight.intensity;
     this.ambientLight.color.set(ambientLight.color);
