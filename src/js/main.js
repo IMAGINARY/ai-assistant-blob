@@ -1,6 +1,7 @@
 import GUI from 'lil-gui';
 import {AdsrEnvelope} from "./adsr-envelope.js";
 import createParametersWithGUI from './parameters.js';
+import transferFunctions from "./transfer-functions.js";
 import {ready} from "./ready.js";
 import {Blob} from "./blob.js";
 
@@ -194,7 +195,8 @@ function updateSpeed() {
 
 function updateBlobParameter(parameter, relInputValue) {
   const {value, min, max, use, transfer, smoothing, maxDelta} = parameter;
-  let newValue = min + relInputValue * (max - min);
+  const transferredRelInputValue = transferFunctions[transfer](relInputValue);
+  let newValue = min + transferredRelInputValue * (max - min);
   newValue = lerp(value, newValue, smoothing, maxDelta);
   newValue = {computed: newValue, min, max}[use];
   Object.assign(parameter, {

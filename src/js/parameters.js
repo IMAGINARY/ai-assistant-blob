@@ -1,3 +1,5 @@
+import transferFunctions from "./transfer-functions.js";
+
 function checkbox(value) {
   return {
     value,
@@ -34,6 +36,10 @@ function dropdown(value, choices) {
   };
 }
 
+function transferFunction(value) {
+  return dropdown(value, Object.keys(transferFunctions));
+}
+
 const parametersWithGUI = {
   loudness: {
     value: slider(0, 0, 1, 0.001, 4),
@@ -68,6 +74,7 @@ const parametersWithGUI = {
     smoothing: slider(0.1, 0, 1, 0.001),
     maxDelta: slider(1, 0, 10, 0.01),
     use: dropdown("computed", ["computed", "min", "max"]),
+    transfer: transferFunction("linear"),
   },
 
   speed: {
@@ -78,6 +85,7 @@ const parametersWithGUI = {
     smoothing: slider(0.5, 0, 1, 0.001),
     maxDelta: slider(0.1, 0, 10, 0.01),
     use: dropdown("computed", ["computed", "min", "max"]),
+    transfer: transferFunction("linear"),
   },
 
   blob: {
