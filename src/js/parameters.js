@@ -46,6 +46,7 @@ const parametersWithGUI = {
     relValue: slider(0, 0, 1, 0.001),
     min: slider(0.01, 0, 1, 0.001),
     max: slider(0.05, 0, 1, 0.001),
+    use: dropdown("computed", ["computed", "min", "middle", "max"]),
   },
 
   loudnessEnvelope: {
@@ -62,6 +63,7 @@ const parametersWithGUI = {
     relValue: slider(1, 0, 1, 0.001),
     min: slider(1, 0, 100, 0.001),
     max: slider(5, 0, 100, 0.001),
+    use: dropdown("computed", ["computed", "min", "middle", "max"]),
     calibrationDistance: slider(5, 0, 100, 0.001),
   },
 

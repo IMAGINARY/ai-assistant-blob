@@ -146,14 +146,14 @@ function updateCss() {
 }
 
 function updateLoudness() {
+  const {min, max, use} = parameters.loudness;
   //get the level of amplitude of the mic
   const level = mic ? mic.getLevel(1) : 0;
   adsrEnvelope.setParameters(parameters.loudnessEnvelope);
   adsrEnvelope.appendSample(level);
-  const maxLoudness = adsrEnvelope.getMax();
-  parameters.loudness.value = maxLoudness;
+  parameters.loudness.value = {computed: adsrEnvelope.getMax(), min, middle: (min + max) / 2, max}[use];
 
-  const clampedLoudness = clamp(maxLoudness, parameters.loudness.min, parameters.loudness.max);
+  const clampedLoudness = clamp(parameters.loudness.value, parameters.loudness.min, parameters.loudness.max);
   if(parameters.loudness.max - parameters.loudness.min < Number.EPSILON)
     parameters.loudness.relValue = 0;
   else
@@ -161,6 +161,7 @@ function updateLoudness() {
 }
 
 function updateDistance() {
+  const {min, max, use} = parameters.distance;
   const maxRelEdgeLength = poses.reduce((maxRelEdgeLength, pose) => {
     const maxPoseRelEdgeLength = bodyPoseCalibrationData.reduce((maxPoseRelEdgeLength,edgeWithProps)=>{
       const [v1, v2] = edgeWithProps.edge;
@@ -176,9 +177,9 @@ function updateDistance() {
   }, 0);
 
   const distance = maxRelEdgeLength !== 0 ? parameters.distance.calibrationDistance / maxRelEdgeLength : Number.MAX_VALUE;
-  parameters.distance.value = distance;
+  parameters.distance.value = {computed: distance, min, middle: (min + max) / 2, max}[use];
 
-  let clampedDistance = clamp(distance, parameters.distance.min, parameters.distance.max);
+  let clampedDistance = clamp(parameters.distance.value, parameters.distance.min, parameters.distance.max);
   if( parameters.distance.max - parameters.distance.min < Number.EPSILON)
     parameters.distance.relValue = 1;
   else
