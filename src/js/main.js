@@ -198,7 +198,7 @@ function updateBlobParameter(parameter, relInputValue) {
   const transferredRelInputValue = transferFunctions[transfer](relInputValue);
   let newValue = min + transferredRelInputValue * (max - min);
   newValue = lerp(value, newValue, smoothing, maxDelta);
-  newValue = {computed: newValue, min, max}[use];
+  newValue = {computed: newValue, min, middle: (min + max) / 2, max}[use];
   Object.assign(parameter, {
     relValue: (newValue - min) / (max - min),
     value: newValue,

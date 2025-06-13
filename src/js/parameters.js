@@ -73,7 +73,7 @@ const parametersWithGUI = {
     max: slider(10, 0, 100, 0.01),
     smoothing: slider(0.1, 0, 1, 0.001),
     maxDelta: slider(1, 0, 10, 0.01),
-    use: dropdown("computed", ["computed", "min", "max"]),
+    use: dropdown("computed", ["computed", "min", "middle", "max"]),
     transfer: transferFunction("linear"),
   },
 
@@ -84,7 +84,7 @@ const parametersWithGUI = {
     max: slider(0.2, 0, 100, 0.01),
     smoothing: slider(0.5, 0, 1, 0.001),
     maxDelta: slider(0.1, 0, 10, 0.01),
-    use: dropdown("computed", ["computed", "min", "max"]),
+    use: dropdown("computed", ["computed", "min", "middle", "max"]),
     transfer: transferFunction("linear"),
   },
 
