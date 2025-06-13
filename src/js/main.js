@@ -185,19 +185,22 @@ function updateDistance() {
 }
 
 function updateSpikes() {
-  const newSpikes = parameters.spikes.min + parameters.loudness.relValue * (parameters.spikes.max - parameters.spikes.min);
-  let spikes = lerp(parameters.spikes.value, newSpikes, parameters.spikes.smoothing, parameters.spikes.maxDelta);
-  spikes = {computed: spikes, min: parameters.spikes.min, max: parameters.spikes.max}[parameters.spikes.use];
-  parameters.spikes.relValue = (spikes - parameters.spikes.min) / (parameters.spikes.max - parameters.spikes.min);
-  parameters.spikes.value = spikes;
+  updateBlobParameter(parameters.spikes, parameters.loudness.relValue);
 }
 
 function updateSpeed() {
-  const newSpeed = parameters.speed.min + parameters.distance.relValue * (parameters.speed.max - parameters.speed.min);
-  let speed = lerp(parameters.speed.value, newSpeed, parameters.speed.smoothing, parameters.speed.maxDelta);
-  speed = {computed: speed, min: parameters.speed.min, max: parameters.speed.max}[parameters.speed.use];
-  parameters.speed.relValue = (speed - parameters.speed.min) / (parameters.speed.max - parameters.speed.min);
-  parameters.speed.value = speed;
+  updateBlobParameter(parameters.speed, parameters.distance.relValue);
+}
+
+function updateBlobParameter(parameter, relInputValue) {
+  const {value, min, max, use, transfer, smoothing, maxDelta} = parameter;
+  let newValue = min + relInputValue * (max - min);
+  newValue = lerp(value, newValue, smoothing, maxDelta);
+  newValue = {computed: newValue, min, max}[use];
+  Object.assign(parameter, {
+    relValue: (newValue - min) / (max - min),
+    value: newValue,
+  });
 }
 
 function drawDebugPanel(p) {
