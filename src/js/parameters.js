@@ -122,6 +122,7 @@ const parametersWithGUI = {
     positionZ: slider(4, -1000, 1000, 1),
     bias: slider(0, -1, 1, 0.001),
     normalBias: slider(0.015, -1, 1, 0.001),
+    helper: checkbox(false),
   },
 
   directionalLight2: {
@@ -132,6 +133,7 @@ const parametersWithGUI = {
     positionZ: slider(4, -1000, 1000, 1),
     bias: slider(0.015, -1, 1, 0.001),
     normalBias: slider(0, -1, 1, 0.001),
+    helper: checkbox(false),
   },
 };
 

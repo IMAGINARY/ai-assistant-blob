@@ -50,10 +50,16 @@ export class Blob {
     this.directionalLight1.shadow.mapSize.set(2048, 2048);
     scene.add(this.directionalLight1);
 
+    this.directionalLight1Helper = new THREE.DirectionalLightHelper( this.directionalLight1, 0.25 );
+    scene.add( this.directionalLight1Helper );
+
     this.directionalLight2 = new THREE.DirectionalLight();
     this.directionalLight2.castShadow = true;
     this.directionalLight2.shadow.mapSize.set(2048, 2048);
     scene.add(this.directionalLight2);
+
+    this.directionalLight2Helper = new THREE.DirectionalLightHelper( this.directionalLight2, 0.25 );
+    scene.add( this.directionalLight2Helper );
 
     this.ambientLight = new THREE.AmbientLight(0xffffff, 1);
     scene.add(this.ambientLight);
@@ -145,6 +151,9 @@ export class Blob {
     this.directionalLight1.shadow.camera.far = directionalLight1Distance + blobSize;
     this.directionalLight1.shadow.bias = directionalLight1.bias;
     this.directionalLight1.shadow.normalBias = directionalLight1.normalBias;
+    this.directionalLight1Helper.visible = directionalLight1.helper;
+    this.directionalLight1Helper.parent.updateMatrixWorld();
+    this.directionalLight1Helper.update();
 
     this.directionalLight2.intensity = directionalLight2.intensity;
     this.directionalLight2.color.set(directionalLight2.color);
@@ -163,6 +172,9 @@ export class Blob {
     this.directionalLight2.shadow.camera.far = directionalLight2Distance - blobSize;
     this.directionalLight2.shadow.bias = directionalLight2.bias;
     this.directionalLight2.shadow.normalBias = directionalLight2.normalBias;
+    this.directionalLight2Helper.visible = directionalLight2.helper;
+    this.directionalLight2Helper.parent.updateMatrixWorld();
+    this.directionalLight2Helper.update();
 
     this.sphere.scale.set(blobSize, blobSize, blobSize);
 
