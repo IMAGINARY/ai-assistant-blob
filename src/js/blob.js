@@ -1,6 +1,7 @@
 import * as THREE from "three/webgpu";
-import { output, vec3, vec4, pow, uniform } from 'three/tsl'
+import { positionLocal, output, vec3, vec4, length, pow, uniform } from "three/tsl";
 import { createUnitSphereBufferGeometry } from "./sphere.js";
+import {snoise} from './tsl/snoise.js';
 import { createNoise3D } from "simplex-noise";
 
 export class Blob {
@@ -39,24 +40,45 @@ export class Blob {
       specular: 0xffffff,
       shininess: 100,
     });
+
+    this.spikeRatio = uniform(1);
+    this.spikes = uniform(1);
+    this.time = uniform(0);
+
+    const normalizedPosition = positionLocal.normalize();
+    const snoiseResult = snoise(normalizedPosition.mul(this.spikes).add(this.time));
+    const normal = snoiseResult.xyz;
+    const spikeLength = snoiseResult.w;
+    this.material.positionNode = normalizedPosition.mul(this.spikeRatio.oneMinus().add(spikeLength.mul(this.spikeRatio)));
+    this.material.normalNode = normal; // gradient !== normal; TODO
+
     this.gamma = uniform(1);
-    this.material.outputNode = vec4(pow(output.rgb, vec3(this.gamma, this.gamma, this.gamma)), output.a);
+    this.material.outputNode = vec4(
+      pow(output.rgb, vec3(this.gamma, this.gamma, this.gamma)),
+      output.a,
+    );
 
     this.directionalLight1 = new THREE.DirectionalLight();
     this.directionalLight1.castShadow = true;
     this.directionalLight1.shadow.mapSize.set(2048, 2048);
     scene.add(this.directionalLight1);
 
-    this.directionalLight1Helper = new THREE.DirectionalLightHelper( this.directionalLight1, 0.25 );
-    scene.add( this.directionalLight1Helper );
+    this.directionalLight1Helper = new THREE.DirectionalLightHelper(
+      this.directionalLight1,
+      0.25,
+    );
+    scene.add(this.directionalLight1Helper);
 
     this.directionalLight2 = new THREE.DirectionalLight();
     this.directionalLight2.castShadow = true;
     this.directionalLight2.shadow.mapSize.set(2048, 2048);
     scene.add(this.directionalLight2);
 
-    this.directionalLight2Helper = new THREE.DirectionalLightHelper( this.directionalLight2, 0.25 );
-    scene.add( this.directionalLight2Helper );
+    this.directionalLight2Helper = new THREE.DirectionalLightHelper(
+      this.directionalLight2,
+      0.25,
+    );
+    scene.add(this.directionalLight2Helper);
 
     this.ambientLight = new THREE.AmbientLight(0xffffff, 1);
     scene.add(this.ambientLight);
@@ -68,7 +90,6 @@ export class Blob {
 
     this.render = () => this.renderer.render(scene, camera);
 
-    this.time = 0;
     this.lastTimestamp = -1;
   }
 
@@ -176,10 +197,13 @@ export class Blob {
     this.material.shininess = blobMaterial.shininess;
     this.material.wireframe = blobMaterial.wireframe;
 
+    this.spikeRatio.value = spikeRatio;
+    this.spikes.value = spikes;
+
     const timeDiff =
       this.lastTimestamp === -1 ? 0 : timestamp - this.lastTimestamp;
     this.lastTimestamp = timestamp;
-    this.time += (timeDiff * speed) / 1000;
+    this.time.value += (timeDiff * speed) / 1000;
 
     if (this.detail !== detail) {
       this.sphereGeometry = Blob.createSphereGeometry(detail);
@@ -190,7 +214,7 @@ export class Blob {
       this.sphere.geometry = this.sphereGeometry;
     }
 
-    this.updateGeometry(spikeRatio, spikes, this.time);
+//    this.updateGeometry(spikeRatio, spikes, this.time);
     this.render();
   }
 }
