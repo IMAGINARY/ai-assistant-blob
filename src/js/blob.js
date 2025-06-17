@@ -207,7 +207,6 @@ export class Blob {
     this.time.value += (timeDiff * speed) / 1000;
 
     if (this.detail !== detail) {
-      console.log(this.detail, detail);
       const geometryToDispose = this.sphere.geometry;
       this.sphere.geometry = new THREE.IcosahedronGeometry(1, detail);
       geometryToDispose.dispose();
