@@ -91,7 +91,7 @@ const parametersWithGUI = {
   },
 
   blob: {
-    detail: slider(7, 0, 8, 1),
+    detail: slider(2 ** 7, 0, 2 ** 8, 1),
     size: slider(1.3, 0.1, 3, 0.01),
     offsetX: slider(-180, -10000, 10000, 1),
     offsetY: slider(80, -10000, 10000, 1),

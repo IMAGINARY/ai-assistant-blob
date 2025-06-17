@@ -7,18 +7,17 @@ import {
   vec3,
   vec4,
 } from "three/tsl";
-import { createUnitSphereBufferGeometry } from "./sphere.js";
 import { psrdnoise } from "./tsl/psrdnoise.js";
 
 export class Blob {
-  constructor(canvas, detail = 5) {
+  constructor(canvas) {
     this.renderer = new THREE.WebGPURenderer({
       canvas: canvas,
       powerPreference: "high-performance",
       antialias: true,
     });
 
-    this.detail = detail;
+    this.detail = 2 ** 5;
 
     this.renderer.setSize(canvas.width, canvas.height);
     this.renderer.setPixelRatio(window.devicePixelRatio || 1);
@@ -34,7 +33,7 @@ export class Blob {
     camera.position.z = 5;
 
     // Create high resolution sphere geometry
-    this.sphereGeometry = Blob.createSphereGeometry(detail);
+    const sphereGeometry = new THREE.IcosahedronGeometry(1, this.detail);
 
     this.material = new THREE.MeshPhongNodeMaterial({
       color: 0xffe0d4,
@@ -117,7 +116,7 @@ export class Blob {
     this.ambientLight = new THREE.AmbientLight(0xffffff, 1);
     scene.add(this.ambientLight);
 
-    this.sphere = new THREE.Mesh(this.sphereGeometry, this.material);
+    this.sphere = new THREE.Mesh(sphereGeometry, this.material);
     this.sphere.receiveShadow = true;
     this.sphere.castShadow = true;
     scene.add(this.sphere);
@@ -125,15 +124,6 @@ export class Blob {
     this.render = () => this.renderer.render(scene, camera);
 
     this.lastTimestamp = -1;
-  }
-
-  static createSphereGeometry(detail) {
-    const sphereGeometry = createUnitSphereBufferGeometry(detail);
-    sphereGeometry.getAttribute("position").setUsage(THREE.StreamDrawUsage);
-    sphereGeometry.computeVertexNormals();
-    sphereGeometry.getAttribute("normal").setUsage(THREE.StreamDrawUsage);
-
-    return sphereGeometry;
   }
 
   animate(
@@ -217,12 +207,11 @@ export class Blob {
     this.time.value += (timeDiff * speed) / 1000;
 
     if (this.detail !== detail) {
-      this.sphereGeometry = Blob.createSphereGeometry(detail);
-      this.clonedVertices = new Float32Array(
-        this.sphereGeometry.attributes.position.array,
-      );
-      this.sphere.geometry.dispose();
-      this.sphere.geometry = this.sphereGeometry;
+      console.log(this.detail, detail);
+      const geometryToDispose = this.sphere.geometry;
+      this.sphere.geometry = new THREE.IcosahedronGeometry(1, detail);
+      geometryToDispose.dispose();
+      this.detail = detail;
     }
 
     this.render();

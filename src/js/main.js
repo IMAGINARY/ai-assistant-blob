@@ -301,8 +301,7 @@ ready().then(function () {
   canvas.width = canvasWidth;
   canvas.height = canvasHeight;
 
-  const detail = 7;
-  const blob = new Blob(canvas, detail);
+  const blob = new Blob(canvas);
 
   function animate(timestamp) {
     if (isDevMode())
