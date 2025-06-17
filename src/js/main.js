@@ -20,8 +20,9 @@ const videoHeight = 960;
 const debugPanelWidth = canvasWidth / 3;
 const debugPanelHeight = debugPanelWidth * (videoHeight / videoWidth);
 
-let bodyPose;
 let poses = [];
+let posesWidth = videoWidth;
+let posesHeight = videoHeight;
 
 const bodyPoseCalibrationData = [
   {"edge": [0, 1], "length": 14.301801345203806},
@@ -54,13 +55,6 @@ function kc2cc(kc) {
 function cc2kc(cc) {
   // Convert camel case to kebab case
   return cc.replace(/([a-z])([A-Z])/g, (g) => g[0] + "-" + g[1].toLowerCase());
-}
-
-function preload(p) {
-  // Load the bodyPose model
-  bodyPose = ml5.bodyPose({
-    modelUrl: "./vendor/movenet-tfjs-multipose-lightning-v1/model.json",
-  });
 }
 
 async function listDevices() {
@@ -109,7 +103,32 @@ async function setupAsync(p) {
   video.hide();
   video.volume(0); // mute the video's audio
 
-  bodyPose.detectStart(video, (result) => {poses = result;});
+  // Create worker for body pose detection
+  const bodyPoseWorker = new Worker(new URL("body-pose-worker.js", import.meta.url), {type: "module"});
+  bodyPoseWorker.onerror = (...args) => console.error(...args);
+  bodyPoseWorker.onmessage = (message) => {
+    poses = message.data.poses;
+    posesWidth = message.data.width;
+    posesHeight = message.data.height;
+  };
+
+  // Send video frames to the worker
+  const track = await new Promise( resolve => video.elt.captureStream().addEventListener('addtrack', ({track}) => resolve(track)));
+  const processor = new MediaStreamTrackProcessor( {track} );
+  const videoReader = processor.readable.getReader();
+
+  async function readVideoFrames() {
+    while(true) {
+      const {done, value: videoFrame} = await videoReader.read();
+      if(done)
+        return;
+      bodyPoseWorker.postMessage({videoFrame}, [videoFrame]);
+      videoFrame.close();
+    }
+  }
+  readVideoFrames()
+   .then(() => {})
+   .catch((error) => console.error(error));
 }
 
 function setup(p) {
@@ -220,8 +239,8 @@ function drawDebugPanel(p) {
         p.fill(255, 255, 0);
         p.stroke(0, 0, 0);
         p.circle(
-            (keypoint.x / video.width) * debugPanelWidth,
-            (keypoint.y / video.height) * debugPanelHeight,
+            (keypoint.x / posesWidth) * debugPanelWidth,
+            (keypoint.y / posesHeight) * debugPanelHeight,
             30
         );
       }
@@ -230,7 +249,6 @@ function drawDebugPanel(p) {
 }
 
 const mainSketch = (p) => {
-  p.preload = () => preload(p);
   p.setup = () => setup(p);
   p.draw = () => draw(p);
 }
