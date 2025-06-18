@@ -37,14 +37,14 @@ function startDetecting(detect) {
 
   const requestDetection = () => {
     if (detectionRequestId === null) {
-      detectionRequestId = requestAnimationFrame(async () => {
+      detectionRequestId = setTimeout(async () => {
         detectionRequestId = null;
         const videoFrameForDetection = videoFrame;
         videoFrame = dummyVideoFrame;
         const detectionResult = await detect(videoFrameForDetection);
         postMessage(detectionResult);
         videoFrameForDetection.close();
-      });
+      }, 0);
     }
   };
 
