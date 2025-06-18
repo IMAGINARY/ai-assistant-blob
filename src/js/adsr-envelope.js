@@ -73,27 +73,27 @@ export class AdsrEnvelope {
   }
 
   set attackTime(value) {
-    this._needsInit = value || this._attackTime !== value;
+    this._needsInit = this._needsInit || this._attackTime !== value;
     this._attackTime = value;
   }
 
   set decayTime(value) {
-    this._needsInit = value || this._decayTime !== value;
-    this._needsInit = true;
+    this._needsInit = this._needsInit || this._decayTime !== value;
+    this._decayTime = value;
   }
 
   set sustainLevel(value) {
-    this._needsInit = value || this._sustainLevel !== value;
+    this._needsInit = this._needsInit || this._sustainLevel !== value;
     this._sustainLevel = value;
   }
 
   set sustainTime(value) {
-    this._needsInit = value || this._sustainTime !== value;
+    this._needsInit = this._needsInit || this._sustainTime !== value;
     this._sustainTime = value;
   }
 
   set releaseTime(value) {
-    this._needsInit = value || this._releaseTime !== value;
+    this._needsInit = this._needsInit || this._releaseTime !== value;
     this._releaseTime = value;
   }
 
@@ -170,13 +170,16 @@ export class AdsrEnvelope {
     this._initIfNeeded();
     const sampleTime = performance.now();
     do {
-      this._samples.pop();
       this._samples.unshift(sample);
       this._lastSampleTime += 1000 / this._samplesPerSecond;
     } while (
       ((sampleTime - this._lastSampleTime) * 1000) / this._samplesPerSecond >
       0
     );
+
+    // Make sure the envelope and samples arrays are the same length
+    this._samples.splice(this._envelope.length, Math.max(0, this._samples.length - this._envelope.length));
+
     this._lastSampleTime = sampleTime;
     this._envelopeAppliedToSamplesNeedsUpdate = true;
   }
