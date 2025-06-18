@@ -1,5 +1,11 @@
 WorkerGlobalScope.onerror = (...args) => console.error(...args);
 
+self.document = {
+  documentElement: {
+    matches: () => false,
+  }
+};
+
 const ml5ModuleUrl = "../../vendor/ml5@1.2.1/ml5.min.js";
 const bodyPoseModelUrl =
   "../../vendor/movenet-tfjs-multipose-lightning-v1/model.json";
