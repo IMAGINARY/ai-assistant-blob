@@ -14,15 +14,15 @@ const canvasWidth = 3840;
 const canvasHeight = 2160;
 
 let video = null;
-const videoWidth = 1280;
-const videoHeight = 960;
+const targetVideoWidth = 640;
+const targetVideoHeight = 360;
+const targetVideoFps = 15;
 
 const debugPanelWidth = canvasWidth / 3;
-const debugPanelHeight = debugPanelWidth * (videoHeight / videoWidth);
 
 let poses = [];
-let posesWidth = videoWidth;
-let posesHeight = videoHeight;
+let posesWidth = 1;
+let posesHeight = 1;
 
 const bodyPoseCalibrationData = [
   {"edge": [0, 1], "length": 14.301801345203806},
@@ -77,17 +77,13 @@ async function setupMic(p, id) {
 }
 
 async function setupVideo(p, id) {
-  const constraints =
-    id !== null && typeof id !== "undefined"
-      ? {
-          video: {
-            deviceId: {
-              exact: id,
-            },
-          },
-          audio: false
-        }
-      : { video: true, audio: false };
+  const width = {ideal: targetVideoWidth};
+  const height = {ideal: targetVideoHeight};
+  const frameRate = { ideal: targetVideoFps };
+  const deviceId = id !== null && typeof id !== "undefined" ? {exact: id} : {};
+  const video = {deviceId, width, height, frameRate};
+  const audio = false;
+  const constraints = {video, audio}
   return p.createCapture(constraints);
 }
 
@@ -99,7 +95,6 @@ async function setupAsync(p) {
   mic = await setupMic(p, searchParams.get("audioDeviceId"));
 
   video = await setupVideo(p, searchParams.get("videoDeviceId"));
-  video.size(videoWidth, videoHeight);
   video.hide();
   video.volume(0); // mute the video's audio
 
@@ -228,6 +223,11 @@ function updateBlobParameter(parameter, relInputValue) {
 function drawDebugPanel(p) {
   // Draw the webcam video
   if (video) {
+    const videoAspectRatio = video.width / video.height;
+    const debugPanelHeight = Math.ceil(debugPanelWidth / videoAspectRatio);
+    if(p.width !== debugPanelWidth || p.height !== debugPanelHeight)
+      p.resizeCanvas(debugPanelWidth, debugPanelHeight);
+
     p.image(video, 0, 0, debugPanelWidth, debugPanelHeight);
 
     // Draw all the tracked landmark points
