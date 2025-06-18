@@ -65,7 +65,7 @@ export class Blob {
       .toVar("blobVertexPosition");
 
     // Set perFragmentNormals to false to use cheaper per-vertex normals
-    const perFragmentNormals = true;
+    const perFragmentNormals = false;
     const sphereNormal = normalizedPosition;
     const snoiseGradient = (
       perFragmentNormals ? snoiseResult.xyz : varying(snoiseResult.xyz)
