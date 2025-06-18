@@ -53,7 +53,7 @@ const parametersWithGUI = {
     attackTime: slider(0.1, 0, 10, 0.01),
     decayTime: slider(0.1, 0, 10, 0.01),
     sustainLevel: slider(0.75, 0, 1, 0.01),
-    sustainTime: slider(0, 5, 0, 10, 0.01),
+    sustainTime: slider(0, 0, 10, 0.01),
     releaseTime: slider(0.1, 0, 10, 0.01),
     samplesPerSecond: slider(60, 1, 1000, 1),
   },
