@@ -10,6 +10,8 @@
           "bezier-easing": "./vendor/bezier-easing@2.1.0/index.js",
           "lil-gui": "./vendor/lil-gui@0.20.0/lil-gui.esm.js",
           "postprocessing": "./vendor/postprocessing@6.37.3/index.js",
+          "@sentry/browser": "./vendor/@sentry/browser@9.33.0/index.mjs",
+          "@sentry/core": "./vendor/@sentry/core@9.33.0/index.mjs",
           "simplex-noise": "./vendor/simplex-noise@4.0.3/simplex-noise.js",
           "three": "./vendor/three@v0.177.0/three.webgpu.js",
           "three/webgpu": "./vendor/three@v0.177.0/three.webgpu.js",
@@ -29,6 +31,14 @@
     </main>
 
     <!-- partial -->
+    <script
+      src="./vendor/@sentry/browser@9.33.0/captureconsole.min.js"
+      integrity="sha384-tLznhqmpQvioHPyLc88mPZC0LhjPb0OIxPrZ8Q5rk9dC+nygIEyCyw6pBm2MADio"
+    ></script>
+    <script
+      src="./vendor/@sentry/browser@9.33.0/bundle.min.js"
+      integrity="sha384-s+iD50HpDGYOzLnOZGR6SG4sWt0g7dG9hdFOQKvJHKuNoQ5+/427vObIhffcW+U7"
+    ></script>
     <script src="vendor/p5@1.11.5/p5.min.js"></script>
     <script src="vendor/p5.sound@1.0.1/p5.sound.min.js"></script>
     <script src="src/js/main.js" type="module"></script>

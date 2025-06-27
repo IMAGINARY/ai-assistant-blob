@@ -4,6 +4,7 @@ import createParametersWithGUI from './parameters.js';
 import transferFunctions from "./transfer-functions.js";
 import {ready} from "./ready.js";
 import {Blob} from "./blob.js";
+import initSentry from './sentry.js';
 
 let mic = null;
 
@@ -299,6 +300,10 @@ async function calibrateBodyPose() {
 }
 
 ready().then(function () {
+  const sentryDSN = new URLSearchParams(document.location.search).get("sentry-dsn");
+  if(typeof sentryDSN === "string" && sentryDSN.length > 0)
+    initSentry(sentryDSN);
+
   const gui = new GUI({ container: document.querySelector('#dev-control-panel') });
   const guiTools = {
     "Log to console": () => console.log(parameters),
