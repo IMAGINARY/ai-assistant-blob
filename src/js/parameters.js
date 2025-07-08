@@ -44,8 +44,8 @@ const parametersWithGUI = {
   loudness: {
     value: slider(0, 0, 1, 0.001, 4),
     relValue: slider(0, 0, 1, 0.001),
-    min: slider(0.01, 0, 1, 0.001),
-    max: slider(0.05, 0, 1, 0.001),
+    min: slider(0.005, 0, 1, 0.001),
+    max: slider(0.3, 0, 1, 0.001),
     use: dropdown("computed", ["computed", "min", "middle", "max"]),
   },
 
@@ -53,16 +53,16 @@ const parametersWithGUI = {
     attackTime: slider(0.1, 0, 10, 0.01),
     decayTime: slider(0.1, 0, 10, 0.01),
     sustainLevel: slider(0.75, 0, 1, 0.01),
-    sustainTime: slider(0, 0, 10, 0.01),
-    releaseTime: slider(0.1, 0, 10, 0.01),
+    sustainTime: slider(0.1, 0, 10, 0.01),
+    releaseTime: slider(0.5, 0, 10, 0.01),
     samplesPerSecond: slider(60, 1, 1000, 1),
   },
 
   distance: {
     value: number(1000, 4),
     relValue: slider(1, 0, 1, 0.001),
-    min: slider(1, 0, 100, 0.001),
-    max: slider(5, 0, 100, 0.001),
+    min: slider(2, 0, 100, 0.001),
+    max: slider(10, 0, 100, 0.001),
     use: dropdown("computed", ["computed", "min", "middle", "max"]),
     calibrationDistance: slider(5, 0, 100, 0.001),
   },
@@ -76,7 +76,7 @@ const parametersWithGUI = {
     smoothing: slider(0.1, 0, 1, 0.001),
     maxDelta: slider(1, 0, 10, 0.01),
     use: dropdown("computed", ["computed", "min", "middle", "max"]),
-    transfer: transferFunction("linear"),
+    transfer: transferFunction("cubicOutIn"),
   },
 
   speed: {
@@ -84,10 +84,10 @@ const parametersWithGUI = {
     relValue: slider(0, 0, 1, 0.001),
     min: slider(0.02, 0, 100, 0.01),
     max: slider(0.2, 0, 100, 0.01),
-    smoothing: slider(0.5, 0, 1, 0.001),
+    smoothing: slider(0.05, 0, 1, 0.001),
     maxDelta: slider(0.1, 0, 10, 0.01),
     use: dropdown("computed", ["computed", "min", "middle", "max"]),
-    transfer: transferFunction("linear"),
+    transfer: transferFunction("sineInOut"),
   },
 
   blob: {
