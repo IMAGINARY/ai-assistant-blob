@@ -45,7 +45,7 @@ const parametersWithGUI = {
     value: slider(0, 0, 1, 0.001, 4),
     relValue: slider(0, 0, 1, 0.001),
     min: slider(0.005, 0, 1, 0.001),
-    max: slider(0.3, 0, 1, 0.001),
+    max: slider(0.2, 0, 1, 0.001),
     use: dropdown("computed", ["computed", "min", "middle", "max"]),
   },
 
@@ -83,7 +83,7 @@ const parametersWithGUI = {
     value: number(0.02, 4),
     relValue: slider(0, 0, 1, 0.001),
     min: slider(0.02, 0, 100, 0.01),
-    max: slider(0.2, 0, 100, 0.01),
+    max: slider(0.4, 0, 100, 0.01),
     smoothing: slider(0.05, 0, 1, 0.001),
     maxDelta: slider(0.1, 0, 10, 0.01),
     use: dropdown("computed", ["computed", "min", "middle", "max"]),
